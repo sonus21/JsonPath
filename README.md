@@ -622,7 +622,7 @@ This Transformation feature can potentially be used to do things like summarizat
   ]
 }
 ```
-* `NOTE: some of the JsonPath's aggregate functions do not work on master. However there is a Pull Request :https://github.com/json-path/JsonPath/pull/197/files that provides the fixes to make aggregate functions work. This fork also incorporates the changes in from the Pull request ?`
+* `NOTE: some of the JsonPath's aggregate functions do not work on master. However there is a Pull Request :https://github.com/json-path/JsonPath/pull/197/files that provides the fixes to make aggregate functions work. This fork also incorporates the changes from the aforementioned Pull request`
 
 The above transformation specification can be used to produce the following summary document 
 
