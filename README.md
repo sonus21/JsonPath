@@ -661,9 +661,7 @@ Given a Source Document like this:
   }
 }
 ```
-
 and a Transformation Specification like this:
-
 ```javascript
 {
   "lookupTables": [{
@@ -700,7 +698,6 @@ and a Transformation Specification like this:
   ]
 }
 ```
-
 The Transformed Target document would look like this:
 
 ```javascript
@@ -722,7 +719,84 @@ The Transformed Target document would look like this:
 
 Notice that the "state" field in the source document was mapped to a "status" field in target document and the mapping made use of a LookupTable to transform "EN_ROUTE" to "ACTIVE". The use of LookupTables is optional in the transformation specification.
 
-Additional features in the form of binary and unary operations on the source-path combined with a constant or a secondary source json-path are also supported by the TransformationProvider. For more details refer [[testcase](https://github.com/KumarJayanti/JsonPath/blob/feature/transformation-api/json-path/src/test/java/com/jayway/jsonpath/TransformationAdvancedTest.java)]
+#### Additional Transformations of Source Path before Mapping
+The default TransformationSpec and Provider also support the notion of transformations of the Source Path before a mapping is performed to the Target Path. The transformations supported are in the form of 
+* Unary operation on the source-path
+* Binary operation on the source-path combined with a constant or a secondary source json-path. 
+In this case the datatypes of the source-path expression and the validation rules implemented by the provider will govern what is valid for the additional transformation.
+
+For example add two numeric source-paths to produce a value in the target document.
+```
+{
+      "source" : "$.earliestStartTime",
+      "additionalTransform" : {
+        "operator" : "ADD",
+        "sourcePath" : "$.plannedDriveDurationSeconds"
+      },
+      "target" : "$.destinationETAComputed"
+}
+```
+In the above example 'earliestStartTime' is added to 'plannedDriveDurationSeconds' from the source document to produce 'destinationETAComputed'
+in the target document.
+
+```
+{
+      "source": "$.cost",
+      "additionalTransform": {
+        "operator" : "ADD",
+        "constantSourceValue" : 100
+      },
+      "target": "$.totalCostWithTax"
+}
+```
+In the above example a constant value 100 is added to 'cost' from the source document to produce 'totalCostWithTax'
+in the target document.
+
+```
+{
+      "source" : "$.stops[-1].estimatedArrivalTime",
+      "additionalTransform" : {
+        "operator" : "TO_ISO8601"
+      },
+      "target" : "$.destinationSTA"
+}
+```
+In the above example a unary operator TO_ISO8601 is applied to 'estimatedArrivalTime' to convert the time to ISO8601 format and produce a field 'destinationSTA' in the target document.
+
+It is also possible to produce a brand new value in the target document without reference to an explicit source-path in a Mapping. 
+This is achieved by only having an 'additionalTransform' and 'target' elements in the Mapping and omitting the 'source' element.
+
+For example, setting the new target path to a constant :
+```
+ {
+   "target" : "$.needSTD",
+   "additionalTransform" : {
+       "constantSourceValue" : true
+   }
+ }
+```
+the above mapping spec will produce a new field - "needSTD" : true in 
+the target document.
+
+For more details refer [[testcase](https://github.com/KumarJayanti/JsonPath/blob/feature/transformation-api/json-path/src/test/java/com/jayway/jsonpath/TransformationAdvancedTest.java)].
+
+##### Supported Set of Operators for Transformations and Extending the supported Operators
+A limited set of Binary and Unary operators are currently supported by the Transformation Spec and Provider.
+However extending the set of operators is simple enough. 
+* A new operator (binary/unary) can be added to com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.SourceTransform.AllowedOperation
+* Validation Rules for the source and destination operands as applicable would have to implemented in com.jayway.jsonpath.spi.transformer.jsonpathtransformer.JsonPathTransformationSpec.validate
+* The actual operation when the operator is used in the transform spec should be implemented as a new case in com.jayway.jsonpath.spi.transformer.jsonpathtransformer.JsonPathTransformationProvider.applyAddtionalTransform
+
+The support for adding additional operators can be enhanced to a more sophisticated declarative approach. But its best to wait 
+and see sufficient interest in this project to justify the additional efforts.
+
+#### Supporting a new Transformer
+The transformer is defined as a new/additional SPI in the JSONPath project.
+The features documented above are of the default implementation of the SPI.
+Each implementation of the SPI is expected to define its own SPEC (specification DSL) for the transformation
+and implement the Provider which transforms JSON documents as per its SPEC.
+JSONPath project defines SPI's for the cache, mapper and json provider. The transformer is added as a new SPI on the same lines, hence switching the provider when there are mulitple providers follows the same established pattern in JSONPath project.
+
 
 [![Analytics](https://ga-beacon.appspot.com/UA-54945131-1/jsonpath/index)](https://github.com/igrigorik/ga-beacon)
  

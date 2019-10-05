@@ -7,6 +7,8 @@ import org.junit.Test;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
+import static org.junit.Assert.assertEquals;
+
 public class TransformationBasicTest {
 
     InputStream sourceStream;
@@ -35,6 +37,8 @@ public class TransformationBasicTest {
     public void simple_transform_spec_test() {
         Object transformed = configuration.transformationProvider().transform(sourceJson,spec, configuration);
         DocumentContext jsonContext = JsonPath.parse(transformed);
+        String path = "$.shipment.unloading.location";
+        assertEquals("-98,225", jsonContext.read(path));
         System.out.println("Document Created by Transformation:" + jsonContext.jsonString());
     }
 

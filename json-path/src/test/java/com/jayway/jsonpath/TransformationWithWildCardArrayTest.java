@@ -7,6 +7,8 @@ import org.junit.Test;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
+import static org.junit.Assert.assertEquals;
+
 public class TransformationWithWildCardArrayTest {
 
 
@@ -41,6 +43,8 @@ public class TransformationWithWildCardArrayTest {
         Object transformed = configuration.transformationProvider()
                 .transform(sourceJson, spec, configuration);
         DocumentContext jsonContext = JsonPath.parse(transformed);
+        String path = "$.store.novel[0].bookTitle";
+        assertEquals("Sayings of the Century", jsonContext.read(path));
         System.out.println("Document Created by Transformation:" + jsonContext.jsonString());
     }
 
