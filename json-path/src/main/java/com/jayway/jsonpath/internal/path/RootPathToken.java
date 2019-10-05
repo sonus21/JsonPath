@@ -80,4 +80,15 @@ public class RootPathToken extends PathToken {
     public void setTail(PathToken token) {
         this.tail = token;
     }
+
+    public PathToken chop() {
+        // Remove tail.
+        PathToken oldTail = tail;
+        tail = tail.remove();
+        return oldTail;
+    }
+
+    public char getRootToken() {
+        return rootToken.charAt(0);
+    }
 }

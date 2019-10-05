@@ -1,6 +1,7 @@
 package com.jayway.jsonpath.internal.function;
 
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.Configurations;
 import net.minidev.json.JSONArray;
 import org.junit.Test;
@@ -104,6 +105,17 @@ public class JSONEntityPathFunctionTest extends BaseFunctionTest {
         values.add(12.2d);
         values.add(17d);
         verifyFunction(conf, path, BATCH_JSON, values);
+        // Then take the average of those averages.
+        path = path + ".avg()";
+        verifyFunction(conf, path, BATCH_JSON, 14.6d);
     }
 
+    @Test(expected = JsonPathException.class)
+    public void testPredicateWithFunctionCallNoMatch() {
+        String path = "$.batches.results[?(@.values.length() >= 12)].values.avg()";
+
+        // This will throw an exception because a function can not be evaluated on an empty array.
+        JSONArray values = new JSONArray();
+        verifyFunction(conf, path, BATCH_JSON, values);
+    }
 }

@@ -263,4 +263,13 @@ public abstract class PathToken {
     public void setNext(final PathToken next) {
         this.next = next;
     }
+
+    PathToken remove() {
+        prev.next = next;
+        if (next == null) {
+            return prev;
+        }
+        next.prev = prev;
+        return next;
+    }
 }
