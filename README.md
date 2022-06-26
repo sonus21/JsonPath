@@ -671,7 +671,7 @@ This Transformation feature can potentially be used to do things like summarizat
 }
 ```
 * `NOTE: some of the JsonPath's aggregate functions do not work on master. However there is a Pull Request :https://github.com/json-path/JsonPath/pull/197/files that provides the fixes to make aggregate functions work. This fork also incorporates the changes from the aforementioned Pull request`
-
+* `NOTE: This feature now stands brokeni as of 26th June 2022 with the sync of latest JsonPath Master into this FORK. This will be fixed in a later update. If your work is impacted due to this regression, please send me email at kumar.jayanti@gmail.com`
 The above transformation specification can be used to produce the following summary document 
 
 ```javascript
