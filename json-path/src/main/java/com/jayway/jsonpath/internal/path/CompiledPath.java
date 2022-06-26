@@ -15,6 +15,7 @@
 package com.jayway.jsonpath.internal.path;
 
 import com.jayway.jsonpath.Configuration;
+import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.internal.EvaluationAbortException;
 import com.jayway.jsonpath.internal.EvaluationContext;
 import com.jayway.jsonpath.internal.Path;
@@ -94,7 +95,8 @@ public class CompiledPath implements Path {
             logger.debug("Evaluating path: {}", toString());
         }
 
-       /*
+
+
         EvaluationContextImpl ctx = new EvaluationContextImpl(this, rootDocument, configuration, forUpdate);
         try {
             PathRef op = ctx.forUpdate() ?  PathRef.createRoot(rootDocument) : PathRef.NO_OP;
@@ -102,11 +104,13 @@ public class CompiledPath implements Path {
         } catch (EvaluationAbortException abort) {}
 
         return ctx;
-       */
+
+       /*
+
        EvaluationContextImpl ctx =
                 new EvaluationContextImpl(this, rootDocument, configuration, forUpdate, rootDocument);
         PathRef op = ctx.forUpdate() ? PathRef.createRoot(rootDocument) : PathRef.NO_OP;
-        if (root.isFunctionPath()) {
+        if (root.isFunctionPath() ) {
             // Remove the functionPath from the path.
             PathToken funcToken = root.chop();
             try {
@@ -153,9 +157,13 @@ public class CompiledPath implements Path {
         }
 
         return ctx;
+
+        */
     }
 
-     private boolean isArrayOfArrays(EvaluationContext ctx, Object model) {
+
+
+    private boolean isArrayOfArrays(EvaluationContext ctx, Object model) {
         // Is the model an Array containing Arrays.
         JsonProvider jsonProvider = ctx.configuration().jsonProvider();
         if (!jsonProvider.isArray(model)) {
@@ -181,7 +189,7 @@ public class CompiledPath implements Path {
         RootPathToken newRoot = PathTokenFactory.createRootPathToken(root.getRootToken());
         newRoot.append(funcToken);
         CompiledPath newCPath = new CompiledPath(newRoot, true);
-        return new EvaluationContextImpl(newCPath, model, configuration, false, rootDocument);
+        return new EvaluationContextImpl(newCPath, model, configuration, false);
     }
 
     @Override
@@ -202,5 +210,9 @@ public class CompiledPath implements Path {
     @Override
     public String toString() {
         return root.toString();
+    }
+
+    public RootPathToken getRoot() {
+        return root;
     }
 }

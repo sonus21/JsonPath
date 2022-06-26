@@ -8,15 +8,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.jayway.jsonpath.InvalidJsonException;
 import com.jayway.jsonpath.JsonPathException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+
 
 public class JacksonJsonNodeJsonProvider extends AbstractJsonProvider {
 
@@ -29,14 +31,14 @@ public class JacksonJsonNodeJsonProvider extends AbstractJsonProvider {
     }
 
     /**
-     * Initialize the JacksonTreeJsonProvider with the default ObjectMapper and ObjectReader
+     * Initialize the JacksonJsonNodeJsonProvider with the default ObjectMapper and ObjectReader
      */
     public JacksonJsonNodeJsonProvider() {
         this(defaultObjectMapper);
     }
 
     /**
-     * Initialize the JacksonTreeJsonProvider with a custom ObjectMapper and ObjectReader.
+     * Initialize the JacksonJsonNodeJsonProvider with a custom ObjectMapper and ObjectReader.
      *
      * @param objectMapper the ObjectMapper to use
      */
@@ -50,6 +52,16 @@ public class JacksonJsonNodeJsonProvider extends AbstractJsonProvider {
             return objectMapper.readTree(json);
         } catch (IOException e) {
             throw new InvalidJsonException(e, json);
+        }
+    }
+
+    @Override
+    public Object parse(byte[] json)
+        throws InvalidJsonException {
+        try {
+            return objectMapper.readTree(json);
+        } catch (IOException e) {
+            throw new InvalidJsonException(e, new String(json, StandardCharsets.UTF_8));
         }
     }
 
@@ -81,7 +93,6 @@ public class JacksonJsonNodeJsonProvider extends AbstractJsonProvider {
     }
 
     public Object unwrap(Object o) {
-
         if (o == null) {
             return null;
         }
@@ -101,8 +112,8 @@ public class JacksonJsonNodeJsonProvider extends AbstractJsonProvider {
                 return e.asInt();
             } else if (e.isLong()) {
                 return e.asLong();
-            } else if (e.isBigDecimal()) {
-                return e.decimalValue();
+            } else if (e.isBigInteger()) {
+                return e.bigIntegerValue();
             } else if (e.isDouble()) {
                 return e.doubleValue();
             } else if (e.isFloat()) {
@@ -148,7 +159,7 @@ public class JacksonJsonNodeJsonProvider extends AbstractJsonProvider {
         if (!jsonObject.has(key)) {
             return UNDEFINED;
         } else {
-            return unwrap(o);
+            return o;
         }
     }
 
@@ -174,9 +185,9 @@ public class JacksonJsonNodeJsonProvider extends AbstractJsonProvider {
 	}
 
     public void removeProperty(Object obj, Object key) {
-        if (isMap(obj))
+        if (isMap(obj)) {
             toJsonObject(obj).remove(key.toString());
-        else {
+        } else {
             ArrayNode array = toJsonArray(obj);
             int index = key instanceof Integer ? (Integer) key : Integer.parseInt(key.toString());
             array.remove(index);
@@ -211,17 +222,30 @@ public class JacksonJsonNodeJsonProvider extends AbstractJsonProvider {
                 return element.size();
             }
         }
-        throw new JsonPathException("length operation can not applied to " + obj != null ? obj.getClass().getName() : "null");
+        throw new JsonPathException("length operation can not applied to " + (obj != null ? obj.getClass().getName()
+                : "null"));
     }
 
     @Override
     public Iterable<?> toIterable(Object obj) {
         ArrayNode arr = toJsonArray(obj);
-        List<Object> values = new ArrayList<Object>(arr.size());
-        for (Object o : arr) {
-            values.add(unwrap(o));
-        }
-        return values;
+        Iterator<?> iterator = arr.iterator();
+        return new Iterable<Object>() {
+            @Override
+            public Iterator<Object> iterator() {
+                return new Iterator<Object>() {
+                    @Override
+                    public boolean hasNext() {
+                        return iterator.hasNext();
+                    }
+
+                    @Override
+                    public Object next() {
+                        return unwrap(iterator.next());
+                    }
+                };
+            }
+        };
     }
 
     private JsonNode createJsonElement(Object o) {
@@ -257,7 +281,9 @@ public class JacksonJsonNodeJsonProvider extends AbstractJsonProvider {
     		objectNode.put(key.toString(), (Long) value);
     	} else if (value instanceof Short) {
     		objectNode.put(key.toString(), (Short) value);
-    	} else if (value instanceof Double) {
+    	} else if (value instanceof BigInteger) {
+            objectNode.put(key.toString(), (BigInteger) value);
+        } else if (value instanceof Double) {
     		objectNode.put(key.toString(), (Double) value);
     	} else if (value instanceof Float) {
     		objectNode.put(key.toString(), (Float) value);

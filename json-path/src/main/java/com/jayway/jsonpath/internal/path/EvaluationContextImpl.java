@@ -10,7 +10,7 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the License.g
  */
 package com.jayway.jsonpath.internal.path;
 
@@ -48,13 +48,23 @@ public class EvaluationContextImpl implements EvaluationContext {
     private final List<PathRef> updateOperations;
     private final HashMap<Path, Object> documentEvalCache = new HashMap<Path, Object>();
     private final boolean forUpdate;
+    private final boolean suppressExceptions;
     private int resultIndex = 0;
 
-    private final Object paramsRootDocument;
+    //private Object paramsRootDocument;
 
+    public RootPathToken getRoot(){
+        return ((CompiledPath) path).getRoot();
+    }
 
-    public EvaluationContextImpl(Path path, Object rootDocument, Configuration configuration, boolean forUpdate
-        , Object paramsRootDocument) {
+    /*
+    public EvaluationContextImpl(Path path, Object rootDocument, Configuration configuration, boolean forUpdate, Object paramsRootDocument) {
+        this(path, rootDocument, configuration, forUpdate);
+        this.paramsRootDocument = paramsRootDocument;
+    }
+     */
+    public
+    EvaluationContextImpl(Path path, Object rootDocument, Configuration configuration, boolean forUpdate) {
         notNull(path, "path can not be null");
         notNull(rootDocument, "root can not be null");
         notNull(configuration, "configuration can not be null");
@@ -64,8 +74,9 @@ public class EvaluationContextImpl implements EvaluationContext {
         this.configuration = configuration;
         this.valueResult = configuration.jsonProvider().createArray();
         this.pathResult = configuration.jsonProvider().createArray();
-        this.updateOperations = new ArrayList<PathRef>();
-        this.paramsRootDocument = paramsRootDocument;
+        this.updateOperations = new ArrayList<>();
+        this.suppressExceptions = configuration.containsOption(Option.SUPPRESS_EXCEPTIONS);
+
     }
 
     public HashMap<Path, Object> documentEvalCache() {
@@ -115,9 +126,6 @@ public class EvaluationContextImpl implements EvaluationContext {
         return rootDocument;
     }
 
-    public Object paramsRootDocument() {
-        return paramsRootDocument;
-    }
 
     public Collection<PathRef> updateOperations(){
 
@@ -137,7 +145,10 @@ public class EvaluationContextImpl implements EvaluationContext {
     @Override
     public <T> T getValue(boolean unwrap) {
         if (path.isDefinite()) {
-            if(resultIndex == 0){
+            if(resultIndex == 0) {
+                if (suppressExceptions) {
+                    return null;
+                }
                 throw new PathNotFoundException("No results for path: " + path.toString());
             }
             int len = jsonProvider().length(valueResult);
@@ -153,7 +164,10 @@ public class EvaluationContextImpl implements EvaluationContext {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getPath() {
-        if(resultIndex == 0){
+        if(resultIndex == 0) {
+            if (suppressExceptions) {
+                return null;
+            }
             throw new PathNotFoundException("No results for path: " + path.toString());
         }
         return (T)pathResult;
@@ -171,6 +185,12 @@ public class EvaluationContextImpl implements EvaluationContext {
         return res;
     }
 
+    /*
+    public Object paramsRootDocument() {
+        return paramsRootDocument;
+    }
+
+     */
     private static class FoundResultImpl implements EvaluationListener.FoundResult {
 
         private final int index;

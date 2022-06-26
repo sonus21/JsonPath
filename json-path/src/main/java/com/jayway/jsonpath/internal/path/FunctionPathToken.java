@@ -1,5 +1,6 @@
 package com.jayway.jsonpath.internal.path;
 
+import com.jayway.jsonpath.internal.Path;
 import com.jayway.jsonpath.internal.PathRef;
 import com.jayway.jsonpath.internal.function.Parameter;
 import com.jayway.jsonpath.internal.function.PathFunction;
@@ -39,8 +40,26 @@ public class FunctionPathToken extends PathToken {
         evaluateParameters(currentPath, parent, model, ctx);
         Object result = pathFunction.invoke(currentPath, parent, model, ctx, functionParams);
         ctx.addResult(currentPath + "." + functionName, parent, result);
+        cleanWildcardPathToken();
         if (!isLeaf()) {
             next().evaluate(currentPath, parent, result, ctx);
+        }
+    }
+
+    private void cleanWildcardPathToken() {
+        if (null != functionParams && functionParams.size() > 0) {
+            Path path = functionParams.get(0).getPath();
+            if (null != path && !path.isFunctionPath() && path instanceof CompiledPath) {
+                RootPathToken root = ((CompiledPath) path).getRoot();
+                PathToken tail = root.getNext();
+                while (null != tail && null != tail.getNext() ) {
+                    if(tail.getNext() instanceof WildcardPathToken){
+                        tail.setNext(tail.getNext().getNext());
+                        break;
+                    }
+                    tail = tail.getNext();
+                }
+            }
         }
     }
 
@@ -48,17 +67,22 @@ public class FunctionPathToken extends PathToken {
 
         if (null != functionParams) {
             for (Parameter param : functionParams) {
-                if (!param.hasEvaluated()) {
                     switch (param.getType()) {
-                        case PATH:
-                            param.setLateBinding(new PathLateBindingValue(param.getPath(), ctx.paramsRootDocument(), ctx.configuration()));
+                    case PATH:
+                        PathLateBindingValue pathLateBindingValue = new PathLateBindingValue(param.getPath(), ctx.rootDocument(), ctx.configuration());
+                        if (!param.hasEvaluated()||!pathLateBindingValue.equals(param.getILateBingValue())) {
+                            param.setLateBinding(pathLateBindingValue);
+                            //param.setCachedValue(param.getPath().evaluate(ctx.paramsRootDocument(), ctx.paramsRootDocument(), ctx.configuration()).getValue());
                             param.setEvaluated(true);
-                            break;
-                        case JSON:
+                        }
+                        break;
+                    case JSON:
+                        if (!param.hasEvaluated()) {
                             param.setLateBinding(new JsonLateBindingValue(ctx.configuration().jsonProvider(), param));
+                            //param.setCachedValue(ctx.configuration().jsonProvider().parse(param.getJson()));
                             param.setEvaluated(true);
-                            break;
-                    }
+                        }
+                        break;
                 }
             }
         }
@@ -83,5 +107,12 @@ public class FunctionPathToken extends PathToken {
 
     public void setParameters(List<Parameter> parameters) {
         this.functionParams = parameters;
+    }
+
+    public List<Parameter> getParameters() {
+        return this.functionParams;
+    }
+    public String getFunctionName() {
+        return this.functionName;
     }
 }

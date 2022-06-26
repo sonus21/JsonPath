@@ -4,7 +4,9 @@ import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.Predicate;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static com.jayway.jsonpath.internal.filter.ValueNodes.PatternNode;
 import static com.jayway.jsonpath.internal.filter.ValueNodes.ValueListNode;
@@ -100,6 +102,8 @@ public class EvaluatorFactory {
                 return left.asNumberNode().getNumber().compareTo(right.asNumberNode().getNumber()) < 0;
             } if(left.isStringNode() && right.isStringNode()){
                 return left.asStringNode().getString().compareTo(right.asStringNode().getString()) < 0;
+            } if (left.isOffsetDateTimeNode() && right.isOffsetDateTimeNode()){ //workaround for issue: https://github.com/json-path/JsonPath/issues/613
+                return left.asOffsetDateTimeNode().getDate().compareTo(right.asOffsetDateTimeNode().getDate()) < 0;
             }
             return false;
         }
@@ -112,6 +116,8 @@ public class EvaluatorFactory {
                 return left.asNumberNode().getNumber().compareTo(right.asNumberNode().getNumber()) <= 0;
             } if(left.isStringNode() && right.isStringNode()){
                 return left.asStringNode().getString().compareTo(right.asStringNode().getString()) <= 0;
+            } if (left.isOffsetDateTimeNode() && right.isOffsetDateTimeNode()){ //workaround for issue: https://github.com/json-path/JsonPath/issues/613
+                return left.asOffsetDateTimeNode().getDate().compareTo(right.asOffsetDateTimeNode().getDate()) <= 0;
             }
             return false;
         }
@@ -124,6 +130,8 @@ public class EvaluatorFactory {
                 return left.asNumberNode().getNumber().compareTo(right.asNumberNode().getNumber()) > 0;
             } else if(left.isStringNode() && right.isStringNode()){
                 return left.asStringNode().getString().compareTo(right.asStringNode().getString()) > 0;
+            } else if (left.isOffsetDateTimeNode() && right.isOffsetDateTimeNode()){ //workaround for issue: https://github.com/json-path/JsonPath/issues/613
+                return left.asOffsetDateTimeNode().getDate().compareTo(right.asOffsetDateTimeNode().getDate()) > 0;
             }
             return false;
         }
@@ -136,6 +144,8 @@ public class EvaluatorFactory {
                 return left.asNumberNode().getNumber().compareTo(right.asNumberNode().getNumber()) >= 0;
             } else if(left.isStringNode() && right.isStringNode()){
                 return left.asStringNode().getString().compareTo(right.asStringNode().getString()) >= 0;
+            } else if (left.isOffsetDateTimeNode() && right.isOffsetDateTimeNode()){ //workaround for issue: https://github.com/json-path/JsonPath/issues/613
+                return left.asOffsetDateTimeNode().getDate().compareTo(right.asOffsetDateTimeNode().getDate()) >= 0;
             }
             return false;
         }
@@ -248,14 +258,39 @@ public class EvaluatorFactory {
             }
 
             if (left.isPatternNode()) {
-                return matches(left.asPatternNode(), getInput(right));
+                if (right.isValueListNode() || (right.isJsonNode() && right.asJsonNode().isArray(ctx))) {
+                    return matchesAny(left.asPatternNode(), right.asJsonNode().asValueListNode(ctx));
+                } else {
+                    return matches(left.asPatternNode(), getInput(right));
+                }
             } else {
-                return matches(right.asPatternNode(), getInput(left));
+                if (left.isValueListNode() || (left.isJsonNode() && left.asJsonNode().isArray(ctx))) {
+                    return matchesAny(right.asPatternNode(), left.asJsonNode().asValueListNode(ctx));
+                } else {
+                    return matches(right.asPatternNode(), getInput(left));
+                }
             }
         }
 
         private boolean matches(PatternNode patternNode, String inputToMatch) {
             return patternNode.getCompiledPattern().matcher(inputToMatch).matches();
+        }
+
+        private boolean matchesAny(PatternNode patternNode, ValueNode valueNode) {
+            if (!valueNode.isValueListNode()) {
+                return false;
+            }
+
+            ValueListNode listNode = valueNode.asValueListNode();
+            Pattern pattern = patternNode.getCompiledPattern();
+
+            for (Iterator<ValueNode> it = listNode.iterator(); it.hasNext(); ) {
+                String input = getInput(it.next());
+                if (pattern.matcher(input).matches()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private String getInput(ValueNode valueNode) {
