@@ -15,6 +15,7 @@
 package com.jayway.jsonpath.internal.path;
 
 import com.jayway.jsonpath.InvalidPathException;
+import com.jayway.jsonpath.Option;
 import com.jayway.jsonpath.PathNotFoundException;
 import com.jayway.jsonpath.internal.PathRef;
 import com.jayway.jsonpath.internal.Utils;
@@ -55,7 +56,7 @@ class PropertyPathToken extends PathToken {
 
     public boolean multiPropertyIterationCase() {
         // Semantics of this case is the same as semantics of ArrayPathToken with INDEX_SEQUENCE operation.
-        return ! isLeaf() && properties.size() > 1;
+        return !isLeaf() && properties.size() > 1;
     }
 
     @Override
@@ -64,7 +65,8 @@ class PropertyPathToken extends PathToken {
         assert onlyOneIsTrueNonThrow(singlePropertyCase(), multiPropertyMergeCase(), multiPropertyIterationCase());
 
         if (!ctx.jsonProvider().isMap(model)) {
-            if (! isUpstreamDefinite()) {
+            if (!isUpstreamDefinite()
+                    || ctx.options().contains(Option.SUPPRESS_EXCEPTIONS)) {
                 return;
             } else {
                 //If we are in CREATE PATH Mode do not complain

@@ -72,8 +72,7 @@ public class PathCompiler {
                 fail("Path must not end with a '.' or '..'");
             }
             LinkedList<Predicate> filterStack = new LinkedList<Predicate>(asList(filters));
-            Path p = new PathCompiler(ci, filterStack).compile();
-            return p;
+            return new PathCompiler(ci, filterStack).compile();
         } catch (Exception e) {
             InvalidPathException ipe;
             if (e instanceof InvalidPathException) {
@@ -135,21 +134,26 @@ public class PathCompiler {
 
         switch (c) {
             case OPEN_SQUARE_BRACKET:
-                return readBracketPropertyToken(appender) ||
-                        readArrayToken(appender) ||
-                        readWildCardToken(appender) ||
-                        readFilterToken(appender) ||
-                        readPlaceholderToken(appender) ||
-                        fail("Could not parse token starting at position " + path.position() + ". Expected ?, ', 0-9, * ");
+                if (!readBracketPropertyToken(appender) && !readArrayToken(appender) && !readWildCardToken(appender)
+                    && !readFilterToken(appender) && !readPlaceholderToken(appender)) {
+                    fail("Could not parse token starting at position " + path.position() + ". Expected ?, ', 0-9, * ");
+                }
+                return true;
             case PERIOD:
-                return readDotToken(appender) ||
-                        fail("Could not parse token starting at position " + path.position());
+                if (!readDotToken(appender)) {
+                    fail("Could not parse token starting at position " + path.position());
+                }
+                return true;
             case WILDCARD:
-                return readWildCardToken(appender) ||
-                        fail("Could not parse token starting at position " + path.position());
+                if (!readWildCardToken(appender)) {
+                    fail("Could not parse token starting at position " + path.position());
+                }
+                return true;
             default:
-                return readPropertyOrFunctionToken(appender) ||
-                        fail("Could not parse token starting at position " + path.position());
+                if (!readPropertyOrFunctionToken(appender)) {
+                    fail("Could not parse token starting at position " + path.position());
+                }
+                return true;
         }
     }
 
@@ -207,6 +211,21 @@ public class PathCompiler {
 
         List<Parameter> functionParameters = null;
         if (isFunction) {
+            int parenthesis_count = 1;
+            for(int i = readPosition + 1; i < path.length(); i++){
+                if (path.charAt(i) == CLOSE_PARENTHESIS)
+                    parenthesis_count--;
+                else if (path.charAt(i) == OPEN_PARENTHESIS)
+                    parenthesis_count++;
+                if (parenthesis_count == 0)
+                    break;
+            }
+
+            if (parenthesis_count != 0){
+                String functionName = path.subSequence(startPosition, endPosition).toString();
+                throw new InvalidPathException("Arguments to function: '" + functionName + "' are not closed properly.");
+            }
+
             if (path.inBounds(readPosition+1)) {
                 // read the next token to determine if we have a simple no-args function call
                 char c = path.charAt(readPosition + 1);
@@ -271,8 +290,8 @@ public class PathCompiler {
 
         // Parenthesis starts at 1 since we're marking the start of a function call, the close paren will denote the
         // last parameter boundary
-        Integer groupParen = 1, groupBracket = 0, groupBrace = 0, groupQuote = 0;
-        Boolean endOfStream = false;
+        int groupParen = 1, groupBracket = 0, groupBrace = 0, groupQuote = 0;
+        boolean endOfStream = false;
         char priorChar = 0;
         List<Parameter> parameters = new ArrayList<Parameter>();
         StringBuilder parameter = new StringBuilder();
@@ -297,9 +316,6 @@ public class PathCompiler {
             switch (c) {
                 case DOUBLE_QUOTE:
                     if (priorChar != '\\' && groupQuote > 0) {
-                        if (groupQuote == 0) {
-                            throw new InvalidPathException("Unexpected quote '\"' at character position: " + path.position());
-                        }
                         groupQuote--;
                     }
                     else {
@@ -333,7 +349,8 @@ public class PathCompiler {
                 // we've encountered a COMMA do the same
                 case CLOSE_PARENTHESIS:
                     groupParen--;
-                    if (0 != groupParen) {
+                    //CS304 Issue link: https://github.com/json-path/JsonPath/issues/620
+                    if (0 > groupParen || priorChar == '(') {
                         parameter.append(c);
                     }
                 case COMMA:
@@ -351,7 +368,7 @@ public class PathCompiler {
                                     param = new Parameter(parameter.toString());
                                     break;
                                 case PATH:
-                                    LinkedList<Predicate> predicates = new LinkedList<Predicate>();
+                                    LinkedList<Predicate> predicates = new LinkedList<>();
                                     PathCompiler compiler = new PathCompiler(parameter.toString(), predicates);
                                     param = new Parameter(compiler.compile());
                                     break;
@@ -415,7 +432,7 @@ public class PathCompiler {
 
         Collection<Predicate> predicates = new ArrayList<Predicate>();
         for (String token : tokens) {
-            token = token != null ? token.trim() : token;
+            token = token != null ? token.trim() : null;
             if (!"?".equals(token == null ? "" : token)) {
                 throw new InvalidPathException("Expected '?' but found " + token);
             }
@@ -595,7 +612,7 @@ public class PathCompiler {
                     inProperty = true;
                     lastSignificantWasComma = false;
                 }
-            } else if (c == COMMA){
+            } else if (c == COMMA && !inProperty) {
                 if (lastSignificantWasComma){
                     fail("Found empty property at index "+readPosition);
                 }

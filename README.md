@@ -11,6 +11,12 @@ Jayway JsonPath is a Java port of [Stefan Goessner JsonPath implementation](http
 
 News
 ----
+30 Jan 2022 - Released JsonPath 2.7.0
+
+02 Jun 2021 - Released JsonPath 2.6.0 
+
+10 Dec 2020 - Released JsonPath 2.5.0
+
 05 Jul 2017 - Released JsonPath 2.4.0
 
 26 Jun 2017 - Released JsonPath 2.3.0
@@ -37,7 +43,7 @@ JsonPath is available at the Central Maven Repository. Maven users add this to y
 <dependency>
     <groupId>com.jayway.jsonpath</groupId>
     <artifactId>json-path</artifactId>
-    <version>2.4.0</version>
+    <version>2.7.0</version>
 </dependency>
 ```
 
@@ -77,14 +83,17 @@ Functions
 Functions can be invoked at the tail end of a path - the input to a function is the output of the path expression.
 The function output is dictated by the function itself.
 
-| Function                  | Description                                                         | Output    |
-| :------------------------ | :------------------------------------------------------------------ |-----------|
-| min()                     | Provides the min value of an array of numbers                       | Double    |
-| max()                     | Provides the max value of an array of numbers                       | Double    |
-| avg()                     | Provides the average value of an array of numbers                   | Double    |
-| stddev()                  | Provides the standard deviation value of an array of numbers        | Double    |
-| length()                  | Provides the length of an array                                     | Integer   |
-
+| Function                  | Description                                                         | Output type |
+| :------------------------ | :------------------------------------------------------------------ |:----------- |
+| min()                     | Provides the min value of an array of numbers                       | Double      |
+| max()                     | Provides the max value of an array of numbers                       | Double      |
+| avg()                     | Provides the average value of an array of numbers                   | Double      | 
+| stddev()                  | Provides the standard deviation value of an array of numbers        | Double      | 
+| length()                  | Provides the length of an array                                     | Integer     |
+| sum()                     | Provides the sum value of an array of numbers                       | Double      |
+| keys()                    | Provides the property keys (An alternative for terminal tilde `~`)  | `Set<E>`    |
+| concat(X)                 | Provides a concatinated version of the path output with a new item  | like input  |
+| append(X)                 | add an item to the json path output array                           | like input  |
 
 Filter Operators
 -----------------
@@ -241,13 +250,13 @@ String json = "{\"date_as_long\" : 1411455611975}";
 Date date = JsonPath.parse(json).read("$['date_as_long']", Date.class);
 ```
 
-If you configure JsonPath to use `JacksonMappingProvider` or `GsonMappingProvider` you can even map your JsonPath output directly into POJO's.
+If you configure JsonPath to use `JacksonMappingProvider`, `GsonMappingProvider`, or `JakartaJsonProvider` you can even map your JsonPath output directly into POJO's.
 
 ```java
 Book book = JsonPath.parse(json).read("$.store.book[0]", Book.class);
 ```
 
-To obtainin full generics type information, use TypeRef.
+To obtain full generics type information, use TypeRef.
 
 ```java
 TypeRef<List<String>> typeRef = new TypeRef<List<String>>() {};
@@ -339,6 +348,15 @@ assertThat(pathList).containsExactly(
     "$['store']['book'][3]['author']");
 ```
 
+Set a value 
+-----------
+The library offers the possibility to set a value.
+
+```java
+String newJson = JsonPath.parse(json).set("$['store']['book'][0]['author']", "Paul").jsonString();
+```
+
+
 
 Tweaking Configuration
 ----------------------
@@ -385,10 +403,13 @@ This option configures JsonPath to return a list even when the path is `definite
 ```java
 Configuration conf = Configuration.defaultConfiguration();
 
-//Works fine
+//ClassCastException thrown
 List<String> genders0 = JsonPath.using(conf).parse(json).read("$[0]['gender']");
-//PathNotFoundException thrown
-List<String> genders1 = JsonPath.using(conf).parse(json).read("$[1]['gender']");
+
+Configuration conf2 = conf.addOptions(Option.ALWAYS_RETURN_LIST);
+
+//Works fine
+List<String> genders0 = JsonPath.using(conf2).parse(json).read("$[0]['gender']");
 ``` 
 **SUPPRESS_EXCEPTIONS**
 <br/>
@@ -397,20 +418,35 @@ This option makes sure no exceptions are propagated from path evaluation. It fol
 * If option `ALWAYS_RETURN_LIST` is present an empty list will be returned
 * If option `ALWAYS_RETURN_LIST` is **NOT** present null returned 
 
+**REQUIRE_PROPERTIES**
+</br>
+This option configures JsonPath to require properties defined in path when an `indefinite` path is evaluated.
+
+```java
+Configuration conf = Configuration.defaultConfiguration();
+
+//Works fine
+List<String> genders = JsonPath.using(conf).parse(json).read("$[*]['gender']");
+
+Configuration conf2 = conf.addOptions(Option.REQUIRE_PROPERTIES);
+
+//PathNotFoundException thrown
+List<String> genders = JsonPath.using(conf2).parse(json).read("$[*]['gender']");
+```
 
 ### JsonProvider SPI
 
 JsonPath is shipped with five different JsonProviders:
 
-* [JsonSmartJsonProvider](https://code.google.com/p/json-smart/) (default)
+* [JsonSmartJsonProvider](https://github.com/netplex/json-smart-v2) (default)
 * [JacksonJsonProvider](https://github.com/FasterXML/jackson)
 * [JacksonJsonNodeJsonProvider](https://github.com/FasterXML/jackson)
 * [GsonJsonProvider](https://code.google.com/p/google-gson/) 
-* [JsonOrgJsonProvider](http://www.json.org/java/index.html)
+* [JsonOrgJsonProvider](https://github.com/stleary/JSON-java)
+* [JakartaJsonProvider](https://javaee.github.io/jsonp/)
 
 Changing the configuration defaults as demonstrated should only be done when your application is being initialized. Changes during runtime is strongly discouraged, especially in multi threaded applications.
   
-
 ```java
 Configuration.setDefaults(new Configuration.Defaults() {
 
@@ -435,6 +471,16 @@ Configuration.setDefaults(new Configuration.Defaults() {
 ```
 
 Note that the JacksonJsonProvider requires `com.fasterxml.jackson.core:jackson-databind:2.4.5` and the GsonJsonProvider requires `com.google.code.gson:gson:2.3.1` on your classpath. 
+
+Both of Jakarta EE 9 [JSON-P (JSR-342)](https://javaee.github.io/jsonp/) and [JSON-B (JSR-367)](http://json-b.net/) providers expect at least Java 8 and require compatible JSON API implementations (such as [Eclipse Glassfish](https://projects.eclipse.org/projects/ee4j.jsonp) and [Eclipse Yasson](https://projects.eclipse.org/projects/ee4j.yasson)) on application runtime classpath; such implementations may also be provided by Java EE application container. Please also note that Apache Johnzon is not classpath-compatible with Jakarta EE 9 specification yet, and if JSON-B mapping provider is chosen then JSON-P provider must be configured and used, too.
+
+One peculiarity of Jakarta EE 9 specifications for JSON processing and databinding (mapping) is immutability of Json arrays and objects as soon as they are fully parsed or written to. To respect the API specification, but allow JsonPath to modify Json documents through add, set/put, replace, and delete operations, `JakartaJsonProvider` has to be initiliazed with optional `true` argument:
+
+* `JsonProvider jsonProvider = new JakartaJsonProvider(true)` (enable mutable Json arrays and objects)
+* `JsonProvider jsonProvider = new JakartaJsonProvider()` (default, strict JSON-P API compliance)
+
+All lookup and read operations with JsonPath are supported regardless of initilization mode. Default mode also needs less memory and is more performant.
+  
 
 ### Cache SPI
 
@@ -625,7 +671,7 @@ This Transformation feature can potentially be used to do things like summarizat
 }
 ```
 * `NOTE: some of the JsonPath's aggregate functions do not work on master. However there is a Pull Request :https://github.com/json-path/JsonPath/pull/197/files that provides the fixes to make aggregate functions work. This fork also incorporates the changes from the aforementioned Pull request`
-
+* `NOTE: This feature now stands brokeni as of 26th June 2022 with the sync of latest JsonPath Master into this FORK. This will be fixed in a later update. If your work is impacted due to this regression, please send me email at kumar.jayanti@gmail.com`
 The above transformation specification can be used to produce the following summary document 
 
 ```javascript
@@ -799,4 +845,3 @@ JSONPath project defines SPI's for the cache, mapper and json provider. The tran
 
 
 [![Analytics](https://ga-beacon.appspot.com/UA-54945131-1/jsonpath/index)](https://github.com/igrigorik/ga-beacon)
- 

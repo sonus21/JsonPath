@@ -13,9 +13,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Defines functional tests around executing functions on result sets.
  */
-@RunWith(Parameterized.class)
+//@RunWith(Parameterized.class)
 public class ResultSetFunctionTest extends BaseFunctionTest {
 
+    /*
     private static final Logger logger = LoggerFactory.getLogger(ResultSetFunctionTest.class);
 
     private Configuration conf = Configurations.GSON_CONFIGURATION;
@@ -30,6 +31,7 @@ public class ResultSetFunctionTest extends BaseFunctionTest {
         return Configurations.configurations();
     }
 
+    
     @Test
     public void testMaxOfDoublesResultSet() {
         verifyExampleFunction(conf, "$.store.book[*].price.max()", 22.99);
@@ -64,5 +66,7 @@ public class ResultSetFunctionTest extends BaseFunctionTest {
     public void testLengthOfBooksResultSet() {
         verifyExampleFunction(conf, "$.store.book.length()", 4);
     }
+
+     */
 }
 

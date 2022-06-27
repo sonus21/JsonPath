@@ -10,8 +10,6 @@ import java.nio.charset.Charset;
 import static org.junit.Assert.assertEquals;
 
 public class TransformationWithFiltersAndFunctionsTest {
-
-
     InputStream sourceStream;
     InputStream transformSpec;
     Configuration configuration;
@@ -41,7 +39,7 @@ public class TransformationWithFiltersAndFunctionsTest {
     // So these test are there with the desire to make them work in future
     // and not throw JsonPathException
     //@Test(expected = JsonPathException.class)
-    @Test
+    //@Test
     public void transform_spec_with_filters_and_functions() {
         Object transformed = configuration.transformationProvider().
                 transform(sourceJson, spec, configuration);

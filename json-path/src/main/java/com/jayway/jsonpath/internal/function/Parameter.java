@@ -18,6 +18,9 @@ public class Parameter {
     private Boolean evaluated = false;
     private String json;
 
+    //private Object cachedValue;
+
+
     public Parameter() {}
 
     public Parameter(String json) {
@@ -68,6 +71,21 @@ public class Parameter {
 
     public void setJson(String json) {
         this.json = json;
+    }
+
+    /*
+    public Object getCachedValue() {
+        return cachedValue;
+    }
+
+    public void setCachedValue(Object cachedValue) {
+        this.cachedValue = cachedValue;
+    }
+
+     */
+
+    public ILateBindingValue getILateBingValue(){
+        return lateBinding;
     }
 
     /**
@@ -125,6 +143,8 @@ public class Parameter {
         } else {
             if (value != null && expectedType.isAssignableFrom(value.getClass())) {
                 collection.add(value);
+            } else if (value != null && expectedType == String.class) {
+                collection.add(value.toString());
             }
         }
     }
