@@ -41,7 +41,7 @@ public class TransformationSpecValidationTest {
         } catch (TransformationSpecValidationException ex) {
             System.out.println("ValidationErrors :" + ex.getMessage());
             String message = ex.getMessage();
-            assertEquals(16, count(message, "errorCode"));
+            assertEquals(14, count(message, "errorCode"));
         }
     }
 

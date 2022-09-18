@@ -1,7 +1,5 @@
 package com.jayway.jsonpath;
 
-import com.jayway.jsonpath.spi.json.JsonProvider;
-import com.jayway.jsonpath.spi.mapper.MappingProvider;
 import com.jayway.jsonpath.spi.transformer.TransformationSpec;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,7 +7,6 @@ import org.junit.Test;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -83,6 +80,20 @@ public class TransformationAdvancedTest {
     @Test
     public void simple_transform_spec_with_missing_source_fields() {
         Object transformed = configuration.transformationProvider().transform(sourceJson_1,spec, configuration);
+        DocumentContext tgtJsonContext = JsonPath.parse(transformed);
+        System.out.println("Document Created by Transformation:" + tgtJsonContext.jsonString());
+    }
+
+    @Test
+    public void multiple_wild_card() {
+        InputStream stream = this.getClass().getClassLoader().getResourceAsStream("transforms/airlines.json");
+        Object json = configuration.jsonProvider().parse(stream, Charset.defaultCharset().name());
+        DocumentContext cntxt = JsonPath.parse(json);
+
+        InputStream specStream = this.getClass().getClassLoader().getResourceAsStream("transforms/multiwildcard_spec.json");
+        TransformationSpec tspec = configuration.transformationProvider().spec(specStream, configuration);
+
+        Object transformed = configuration.transformationProvider().transform(json,tspec, configuration);
         DocumentContext tgtJsonContext = JsonPath.parse(transformed);
         System.out.println("Document Created by Transformation:" + tgtJsonContext.jsonString());
     }

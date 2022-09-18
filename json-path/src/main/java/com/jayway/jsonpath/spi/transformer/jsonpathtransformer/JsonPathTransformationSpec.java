@@ -147,12 +147,13 @@ public class JsonPathTransformationSpec implements TransformationSpec {
                             PATH_NEITHER_DEFINITE_NOR_WILDCARD_ARRAY, tgt));
 
                 }
+                /*
                 if (bothNotSame) {
                     response.add(new JsonPathTransformerValidationError(
                             INVALID_WILDCARD_ARRAY_MAPPING,
                             (src != null) ? src : "null", isSrcArrayWildCard, tgt, isTgtArrayWildCard));
 
-                }
+                }*/
 
             } catch (InvalidPathException e) {
                 response.add(new JsonPathTransformerValidationError(
@@ -330,6 +331,8 @@ public class JsonPathTransformationSpec implements TransformationSpec {
         int lastIndex = path.lastIndexOf("[*]");
         int firstIndex = path.indexOf("[*]");
         if (firstIndex != -1) {
+            return true;
+            /*
             if (lastIndex == firstIndex) {
                 return true;
             } else {
@@ -338,6 +341,8 @@ public class JsonPathTransformationSpec implements TransformationSpec {
                         getStringFromBundle(UNSUPPORTED_WILDCARD_PATH, path));
 
             }
+
+             */
         }
         //its not an array wildcard case
         return false;

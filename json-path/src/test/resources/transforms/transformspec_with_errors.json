@@ -36,20 +36,12 @@
       "lookupTable": "stateMapper"
     },
     {
-      "source": "$.shipment.stops[*].name",
-      "target": "$.shipment.loading.name"
-    },
-    {
       "source": "$.shipment.stops[0:1].location",
       "target": "$.shipment.loading.location"
     },
     {
       "source": "$.shipment.stops[1].name",
       "target": "$.shipment.unloading.name"
-    },
-    {
-      "source": "$.shipment.stops[*].location.initial[*].value",
-      "target": "$.shipment.unloading.location"
     },
     {
       "source": "$.shipment.id",
