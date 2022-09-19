@@ -6,6 +6,8 @@ import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.LookupTable
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.PathMapping;
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.SourceTransform;
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.TransformationModel;
+import jakarta.json.JsonArray;
+import org.json.JSONArray;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -154,7 +156,8 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
                 JsonPath compiledDstPath = JsonPath.compile(pm.getTarget());
 
                 if (!compiledSrcPath.isDefinite() && !compiledDstPath.isDefinite()
-                        && isArrayWildCard(pm.getSource()) && isArrayWildCard(pm.getTarget())) {
+                        && isArrayWildCard(pm.getSource(), true)
+                        && isArrayWildCard(pm.getTarget(), false)) {
                     //TODO: handle multiple wild-cards : construct a tree and each path from root to leaf
                     //would then provide one expanded Path.
                     List<PathMapping> expanded = computedExpandedPathForArrays(
@@ -328,14 +331,45 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
             }
         }
 
-        if (first) {
-            transformed = compiledDstPath.set(configuration.jsonProvider().parse(inputObject),
-                    srcValue, configuration);
+        //here based on size of srcValue
+        //validate destination has only single WildCard Array whereas source can have multiple
+        //Create destination expressions for each SrcValue
+        //example : $['reservation'][0]['originairportcode']
+        //$['reservation'][1]['originairportcode']
+        //use srcValue[0] and srcValue[1] to set the value
+        if (configuration.jsonProvider().isArray(srcValue) && isArrayWildCard(pm.getTarget(),false)) {
+            for (int i=0; i < configuration.jsonProvider().length(srcValue); i++) {
+                //first expand destination path using i in the wildcard
+                //compile the destination path and use it
+                String target = pm.getTarget();
+                String updated = replaceWildCardWith(target, i);
+                JsonPath dstPath = JsonPath.compile(updated);
+                if (first) {
+                    //srcValue is jsonarray
+                    transformed = dstPath.set(configuration.jsonProvider().parse(inputObject),
+                            configuration.jsonProvider().getArrayIndex(srcValue, i), configuration);
+                    first = false;
+                } else {
+                    transformed = dstPath.set(transformed,
+                            configuration.jsonProvider().getArrayIndex(srcValue, i), configuration);
+                }
+
+            }
         } else {
-            transformed = compiledDstPath.set(transformed, srcValue, configuration);
+            if (first) {
+                //srcValue is jsonarray
+                transformed = compiledDstPath.set(configuration.jsonProvider().parse(inputObject),
+                        srcValue, configuration);
+            } else {
+                transformed = compiledDstPath.set(transformed, srcValue, configuration);
+            }
         }
 
         return transformed;
+    }
+
+    private String replaceWildCardWith(String target, int i) {
+        return target.replace("[*]","[" + i + "]");
     }
 
     private void checkDataTypesAndOperator(
@@ -435,6 +469,9 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
 
         //We support only a single wild-card to begin with.
         String srcpathTrimmed = srcPath.replaceAll("\\s", "");
+        String dstpathTrimmed = dstPath.replaceAll("\\s", "");
+        /*
+
         int firstIndex = srcpathTrimmed.indexOf("[*]");
         if (firstIndex == -1) {
             throw new TransformationException("c");
@@ -453,13 +490,23 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
         if (firstIndex == -1) {
             throw new TransformationException(getStringFromBundle(INTERNAL_ERROR));
         }
+        */
+
 
         List<PathMapping> result = new ArrayList<PathMapping>();
 
+        /*
         for (int i = 0; i < size; i++) {
             PathMapping p = new PathMapping();
             p.setSource(srcpathTrimmed.replace("[*]", "[" + i + "]"));
             p.setTarget(dstpathTrimmed.replace("[*]", "[" + i + "]"));
+            result.add(p);
+        }*/
+
+        for (int i = 0; i < 1; i++) {
+            PathMapping p = new PathMapping();
+            p.setSource(srcpathTrimmed);
+            p.setTarget(dstpathTrimmed);
             result.add(p);
         }
 

@@ -1,0 +1,11 @@
+{
+  "pathMappings": [{
+    "source": "$.reservation.items[*].flyItem.slices[*].segments[*].originAirportCode",
+    "target": "$.reservation[*].originAirportCode[*].value"
+  },
+    {
+      "source": "$.reservation.items[*].flyItem.slices[*].segments[*].destinationAirportCode",
+      "target": "$.reservation[*].destinationAirportCode"
+    }
+  ]
+}

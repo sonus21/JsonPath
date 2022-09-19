@@ -96,6 +96,44 @@ public class TransformationAdvancedTest {
         Object transformed = configuration.transformationProvider().transform(json,tspec, configuration);
         DocumentContext tgtJsonContext = JsonPath.parse(transformed);
         System.out.println("Document Created by Transformation:" + tgtJsonContext.jsonString());
+        String atl = tgtJsonContext.read("$.reservation.originAirportCode[0]");
+        assertEquals(atl, "ATL");
+        String dtw = tgtJsonContext.read("$.reservation.originAirportCode[1]");
+        assertEquals(dtw, "DTW");
+    }
+
+    @Test
+    public void wild_card_target() {
+        InputStream stream = this.getClass().getClassLoader().getResourceAsStream("transforms/airlines.json");
+        Object json = configuration.jsonProvider().parse(stream, Charset.defaultCharset().name());
+        DocumentContext cntxt = JsonPath.parse(json);
+
+        InputStream specStream = this.getClass().getClassLoader().getResourceAsStream("transforms/wildcard_target_spec.json");
+        TransformationSpec tspec = configuration.transformationProvider().spec(specStream, configuration);
+
+        Object transformed = configuration.transformationProvider().transform(json,tspec, configuration);
+        DocumentContext tgtJsonContext = JsonPath.parse(transformed);
+        String atl = tgtJsonContext.read("$.reservation[0].originAirportCode");
+        assertEquals(atl, "ATL");
+        String dtw = tgtJsonContext.read("$.reservation[1].originAirportCode");
+        assertEquals(dtw, "DTW");
+        atl = tgtJsonContext.read("$.reservation[1].destinationAirportCode");
+        assertEquals(atl, "ATL");
+        dtw = tgtJsonContext.read("$.reservation[0].destinationAirportCode");
+        assertEquals(dtw, "DTW");
+        System.out.println("Document Created by Transformation:" + tgtJsonContext.jsonString());
+    }
+
+    @Test(expected = com.jayway.jsonpath.spi.transformer.TransformationSpecValidationException.class)
+    public void multi_wild_card_target() {
+        InputStream stream = this.getClass().getClassLoader().getResourceAsStream("transforms/airlines.json");
+        Object json = configuration.jsonProvider().parse(stream, Charset.defaultCharset().name());
+        DocumentContext cntxt = JsonPath.parse(json);
+
+        InputStream specStream = this.getClass().getClassLoader().getResourceAsStream("transforms/invalid_wildcard_target_spec.json");
+        TransformationSpec tspec = configuration.transformationProvider().spec(specStream, configuration);
+
+        Object transformed = configuration.transformationProvider().transform(json,tspec, configuration);
     }
 
 }

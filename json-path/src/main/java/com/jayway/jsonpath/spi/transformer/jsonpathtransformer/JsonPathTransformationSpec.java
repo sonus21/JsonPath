@@ -112,9 +112,10 @@ public class JsonPathTransformationSpec implements TransformationSpec {
                 JsonPath compiledSrc = null;
                 boolean isSrcArrayWildCard = false;
                 if (src != null) {
+
                     compiledSrc = JsonPath.compile(mapping.getSource());
                     try {
-                        isSrcArrayWildCard = isArrayWildCard(src);
+                        isSrcArrayWildCard = isArrayWildCard(src, true);
                     } catch (UnsupportedWildcardPathException ex) {
                         response.add(new JsonPathTransformerValidationError(UNSUPPORTED_WILDCARD_PATH, src));
                     }
@@ -122,12 +123,16 @@ public class JsonPathTransformationSpec implements TransformationSpec {
                 JsonPath compiledTgt = JsonPath.compile(mapping.getTarget());
                 boolean isTgtArrayWildCard = false;
                 try {
-                    isTgtArrayWildCard = isArrayWildCard(tgt);
+                    isTgtArrayWildCard = isArrayWildCard(tgt, false);
                 } catch (UnsupportedWildcardPathException ex) {
                     response.add(new JsonPathTransformerValidationError(UNSUPPORTED_WILDCARD_PATH, tgt));
                 }
 
-                boolean bothNotSame = isSrcArrayWildCard ^ isTgtArrayWildCard;
+                if (isTgtArrayWildCard && !isSrcArrayWildCard) {
+                    response.add(new JsonPathTransformerValidationError(
+                            INVALID_WILDCARD_ARRAY_MAPPING,
+                            (src != null) ? src : "null", isSrcArrayWildCard, tgt, isTgtArrayWildCard));
+                }
 
 
                 //On the source side we would want to allow predicate expressions, if they
@@ -147,13 +152,6 @@ public class JsonPathTransformationSpec implements TransformationSpec {
                             PATH_NEITHER_DEFINITE_NOR_WILDCARD_ARRAY, tgt));
 
                 }
-                /*
-                if (bothNotSame) {
-                    response.add(new JsonPathTransformerValidationError(
-                            INVALID_WILDCARD_ARRAY_MAPPING,
-                            (src != null) ? src : "null", isSrcArrayWildCard, tgt, isTgtArrayWildCard));
-
-                }*/
 
             } catch (InvalidPathException e) {
                 response.add(new JsonPathTransformerValidationError(
@@ -321,8 +319,8 @@ public class JsonPathTransformationSpec implements TransformationSpec {
     }
 
     /* package */
-    static boolean isArrayWildCard(String path) {
-        //TODO: We support only a single wild-card to begin with.
+    static boolean isArrayWildCard(String path, boolean isSourcePath) {
+        //TODO: We support only a single wild-card in targetPath.
         path = path.replaceAll("\\s", "");
         JsonPath compiled = JsonPath.compile(path);
         if (compiled.isFunctionPath()) {
@@ -331,18 +329,18 @@ public class JsonPathTransformationSpec implements TransformationSpec {
         int lastIndex = path.lastIndexOf("[*]");
         int firstIndex = path.indexOf("[*]");
         if (firstIndex != -1) {
-            return true;
-            /*
             if (lastIndex == firstIndex) {
                 return true;
             } else {
-                //this is an array wildcard however its currently unsupported
-                throw new UnsupportedWildcardPathException(
-                        getStringFromBundle(UNSUPPORTED_WILDCARD_PATH, path));
+                //this is an array wildcard however its currently unsupported in target mapping
+                if (!isSourcePath) {
+                    throw new UnsupportedWildcardPathException(
+                            getStringFromBundle(UNSUPPORTED_WILDCARD_PATH, path));
+                } else {
+                    return true;
+                }
 
             }
-
-             */
         }
         //its not an array wildcard case
         return false;
