@@ -1,0 +1,8 @@
+{
+  "pathMappings": [
+    {
+      "source": "$.data[*].value",
+      "target": "$.data[*].value"
+    }
+  ]
+}

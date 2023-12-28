@@ -67,7 +67,7 @@ public class TransformationAdvancedTest {
         assertEquals(cost + 100, totalCost, 0);
 
         //$.weight / 1000 == $.testingAdditionalTransform.weightKGS
-        double weight = jsonContext.read("$.weight ");
+        double weight = jsonContext.read("$.weight");
         double weightKGS = tgtJsonContext.read("$.testingAdditionalTransform.weightKGS");
         assertEquals(weight/1000, weightKGS, 0.01);
 
