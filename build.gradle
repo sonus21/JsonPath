@@ -6,7 +6,6 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.3.0'
         classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
         classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:6.1.0'
     }
@@ -14,14 +13,14 @@ buildscript {
 
 ext {
     libs = [
-            gson: 'com.google.code.gson:gson:2.8.9',
-            hamcrest: 'org.hamcrest:hamcrest:2.2',
-            jacksonDatabind: 'com.fasterxml.jackson.core:jackson-databind:2.13.2.2',
-            jettison: 'org.codehaus.jettison:jettison:1.4.1',
-            jsonOrg: 'org.json:json:20140107',
-            jsonSmart: 'net.minidev:json-smart:2.4.8',
+            jsonSmart: 'net.minidev:json-smart:2.4.10',
             slf4jApi: 'org.slf4j:slf4j-api:1.7.36',
-            tapestryJson: 'org.apache.tapestry:tapestry-json:5.8.0',
+            gson: 'com.google.code.gson:gson:2.10.1',
+            hamcrest: 'org.hamcrest:hamcrest:2.2',
+            jacksonDatabind: 'com.fasterxml.jackson.core:jackson-databind:2.14.2',
+            jettison: 'org.codehaus.jettison:jettison:1.5.4',
+            jsonOrg: 'org.json:json:20230227',
+            tapestryJson: 'org.apache.tapestry:tapestry-json:5.8.1',
             jakartaJsonP: 'jakarta.json:jakarta.json-api:2.0.1',
             jakartaJsonB: 'jakarta.json.bind:jakarta.json.bind-api:2.0.0',
 
@@ -34,10 +33,19 @@ ext {
                     'org.glassfish:jakarta.json:2.0.1',
                     'org.eclipse:yasson:2.0.4',
                     //'org.apache.johnzon:johnzon-jsonb:1.2.12',
-                    'org.slf4j:slf4j-simple:1.7.36'
+                    'org.slf4j:slf4j-simple:1.7.36',
+                    'com.google.code.gson:gson:2.10.1',
+                    'org.hamcrest:hamcrest:2.2',
+                    'com.fasterxml.jackson.core:jackson-databind:2.14.2',
+                    'org.codehaus.jettison:jettison:1.5.4',
+                    'org.json:json:20140107',
+                    'org.apache.tapestry:tapestry-json:5.8.1',
+                    'jakarta.json:jakarta.json-api:2.0.1',
+                    'jakarta.json.bind:jakarta.json.bind-api:2.0.0'
+
             ]
     ]
-    snapshotVersion = project.version.contains('SNAPSHOT')
+    snapshotVersion = true
 }
 
 allprojects {
@@ -45,7 +53,7 @@ allprojects {
     ext.buildTimestamp = new Date().format('yyyy-MM-dd HH:mm:ss')
 
     group = 'com.jayway.jsonpath'
-    version = '2.8.0' + (snapshotVersion ? "-SNAPSHOT" : "")
+    version = '2.9.0' + (snapshotVersion ? "-SNAPSHOT" : "")
 
 }
 
@@ -75,13 +83,12 @@ subprojects {
 
         testLogging {
             events "passed", "skipped", "failed"
-            //showStandardStreams = true
         }
     }
 
     signing {
-        sign configurations.archives // sign publishing.publications.mavenJava
-        required { !snapshotVersion && gradle.taskGraph.hasTask("publish") } // uploadArchives is replaced by publish
+        sign publishing.publications
+        required { !snapshotVersion && gradle.taskGraph.hasTask("publish") }
     }
 
     javadoc {
@@ -95,6 +102,17 @@ subprojects {
     }
 
     publishing {
+        repositories {
+            maven {
+                def releaseRepo = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+                def snapshotRepo = "https://oss.sonatype.org/content/repositories/snapshots/"
+                url = snapshotVersion ? snapshotRepo : releaseRepo
+                credentials {
+                    username = project.hasProperty('sonatypeOssUsername') ? sonatypeOssUsername : "Unknown user"
+                    password = project.hasProperty('sonatypeOssPassword') ? sonatypeOssPassword : "Unknown password"
+                }
+            }
+        }
         publications {
             mavenJava(MavenPublication) {
                 from components.java
@@ -103,7 +121,7 @@ subprojects {
 
                 pom {
                     name = jar.baseName
-                    description = project.description
+                    description = 'A library to query and verify JSON'
                     url = 'https://github.com/jayway/JsonPath'
 
                     licenses {
@@ -139,4 +157,4 @@ wrapper {
 
 //Task used by Heroku for staging
 task stage(dependsOn: [':json-path-web-test:clean', 'json-path-web-test:jar', 'json-path-web-test:shadowJar']) {}
-apply from: "$rootDir/gradle/binaryCompatibility.gradle"
+
