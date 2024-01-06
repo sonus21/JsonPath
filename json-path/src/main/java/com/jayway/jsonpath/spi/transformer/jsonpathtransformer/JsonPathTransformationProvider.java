@@ -370,7 +370,15 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
                             srcValue, configuration);
                 }
             } else {
-                transformed = compiledDstPath.set(transformed, srcValue, configuration);
+                if (isArrayWildCard(pm.getTarget(),false)) {
+                    //srcValue is not jsonarray but target path is an array
+                    String target = pm.getTarget();
+                    String updated = replaceWildCardWith(target, 0);
+                    JsonPath dstPath = JsonPath.compile(updated);
+                    transformed = dstPath.set(transformed, srcValue, configuration);
+                } else {
+                    transformed = compiledDstPath.set(transformed, srcValue, configuration);
+                }
             }
         }
 

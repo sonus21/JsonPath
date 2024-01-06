@@ -1,0 +1,12 @@
+{
+  "pathMappings": [
+    {
+      "source": "$.total",
+      "target": "$.recordsTotal"
+    },
+    {
+      "source": "$.data[*].value",
+      "target": "$.data[*].value"
+    }
+  ]
+}
