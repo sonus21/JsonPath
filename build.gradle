@@ -42,7 +42,7 @@ ext {
 
             ]
     ]
-    snapshotVersion = true
+    snapshotVersion = false
 }
 
 allprojects {
@@ -100,12 +100,12 @@ subprojects {
     publishing {
         repositories {
             maven {
-                def releaseRepo = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-                def snapshotRepo = "https://oss.sonatype.org/content/repositories/snapshots/"
+                def releaseRepo = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+                def snapshotRepo = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
                 url = snapshotVersion ? snapshotRepo : releaseRepo
                 credentials {
-                    username = project.hasProperty('sonatypeOssUsername') ? sonatypeOssUsername : "Unknown user"
-                    password = project.hasProperty('sonatypeOssPassword') ? sonatypeOssPassword : "Unknown password"
+                    username = project.hasProperty('sonatypeUsername') ? sonatypeUsername : "Unknown user"
+                    password = project.hasProperty('sonatypePassword') ? sonatypePassword : "Unknown password"
                 }
             }
         }
@@ -114,12 +114,13 @@ subprojects {
                 from components.java
 
                 artifactId = project.name
+                group = 'com.github.sonus21'
                 //artifactId = jar.archiveBaseName
 
                 pom {
                     name = project.name
-                    description = 'A library to query and verify JSON'
-                    url = 'https://github.com/jayway/JsonPath'
+                    description = 'A library to query, verify and transform JSON'
+                    url = 'https://github.com/sonus21/JsonPath'
 
                     licenses {
                         license {
