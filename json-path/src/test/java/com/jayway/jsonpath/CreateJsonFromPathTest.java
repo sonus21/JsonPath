@@ -1,7 +1,7 @@
 package com.jayway.jsonpath;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.jayway.jsonpath.JsonPath.parse;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,7 +11,7 @@ public class CreateJsonFromPathTest {
     private String inputObject =  "{ }";
     Configuration pathConfiguration;
 
-    @Before
+    @BeforeEach
     public void setup() {
         pathConfiguration = Configuration.builder()
                 .options(Option.CREATE_MISSING_PROPERTIES_ON_DEFINITE_PATH).build();

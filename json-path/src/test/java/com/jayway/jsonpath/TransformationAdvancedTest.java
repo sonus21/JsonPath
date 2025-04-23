@@ -1,14 +1,16 @@
 package com.jayway.jsonpath;
 
 import com.jayway.jsonpath.spi.transformer.TransformationSpec;
-import org.junit.Before;
-import org.junit.Test;
+import com.jayway.jsonpath.spi.transformer.TransformationSpecValidationException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class TransformationAdvancedTest {
@@ -24,7 +26,7 @@ public class TransformationAdvancedTest {
     DocumentContext jsonContext_1;
     Map<String, String> kssProps;
 
-    @Before
+    @BeforeEach
     public void setup() {
 
         configuration = Configuration.builder()
@@ -124,16 +126,10 @@ public class TransformationAdvancedTest {
         System.out.println("Document Created by Transformation:" + tgtJsonContext.jsonString());
     }
 
-    @Test(expected = com.jayway.jsonpath.spi.transformer.TransformationSpecValidationException.class)
-    public void multi_wild_card_target() {
-        InputStream stream = this.getClass().getClassLoader().getResourceAsStream("transforms/airlines.json");
-        Object json = configuration.jsonProvider().parse(stream, Charset.defaultCharset().name());
-        DocumentContext cntxt = JsonPath.parse(json);
-
+    @Test
+    public void invalid_multi_wild_card_target() {
         InputStream specStream = this.getClass().getClassLoader().getResourceAsStream("transforms/invalid_wildcard_target_spec.json");
-        TransformationSpec tspec = configuration.transformationProvider().spec(specStream, configuration);
-
-        Object transformed = configuration.transformationProvider().transform(json,tspec, configuration);
+        assertThrows(TransformationSpecValidationException.class, ()-> configuration.transformationProvider().spec(specStream, configuration));
     }
 
 }

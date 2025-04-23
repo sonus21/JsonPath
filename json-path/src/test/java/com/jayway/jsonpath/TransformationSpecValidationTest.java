@@ -2,13 +2,13 @@ package com.jayway.jsonpath;
 
 import com.jayway.jsonpath.spi.transformer.TransformationSpec;
 import com.jayway.jsonpath.spi.transformer.TransformationSpecValidationException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TransformationSpecValidationTest {
 
@@ -18,7 +18,7 @@ public class TransformationSpecValidationTest {
     TransformationSpec spec;
     Object sourceJson;
 
-    @Before
+    @BeforeEach
     public void setup() {
         configuration = Configuration.builder()
                 .options(Option.CREATE_MISSING_PROPERTIES_ON_DEFINITE_PATH).build();
