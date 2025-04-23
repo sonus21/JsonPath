@@ -8,6 +8,8 @@ public interface Operator {
         return !isUnary();
     }
 
+    boolean supports(Class<?> type);
+
     String name();
 
     String getType();

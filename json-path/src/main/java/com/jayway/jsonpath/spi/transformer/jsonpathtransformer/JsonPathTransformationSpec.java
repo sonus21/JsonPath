@@ -60,8 +60,6 @@ import java.util.*;
  * TODO: identify more Validations.
  */
 public class JsonPathTransformationSpec implements TransformationSpec {
-
-    public static final String UNARY = "unary";
     /*
      * The Object could be whatever is returned by the underlying JsonProvider used to
      * parse the SPEC.

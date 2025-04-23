@@ -8,6 +8,8 @@ import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.Operator;
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.PathMapping;
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.SourceTransform;
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.TransformationModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -19,6 +21,8 @@ import static com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.Json
 
 
 public class JsonPathTransformationProvider implements TransformationProvider<JsonPathTransformationSpec> {
+
+    private static final Logger log = LoggerFactory.getLogger(JsonPathTransformationProvider.class);
 
     @Override
     public TransformationSpec spec(String input, Configuration configuration) {
@@ -277,9 +281,13 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
             throw new TransformationException("operator '" + operator + "' is not registered/found");
         }
 
-        // it's a unary so lets apply on the source
-        if (additonalSourceValue != null || OperatorRegistry.isUnary(op)) {
-            if (operator != null) {
+        if (op != null) {
+            if (additionalSourcePath == null) {
+                log.warn("operator is not applied on field due to null additional source path {}", pm.getAdditionalTransform().getSourcePath());
+            }
+            if ((additonalSourceValue == null && op.isUnary()) ||
+                    (additonalSourceValue != null && op.isBinary())) {
+                checkDataTypesAndOperator(srcValue, additonalSourceValue, op);
                 srcValue = applyAdditionalTransform(srcValue, additonalSourceValue, op);
             }
         }

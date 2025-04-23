@@ -1,6 +1,5 @@
 package com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model;
 
-import java.util.*;
 
 /**
  * Captures a single additional Path OR Constant along with Operation to be performed

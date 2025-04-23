@@ -27,8 +27,7 @@ public class TransformationAdvancedTest {
     @BeforeEach
     public void setup() {
 
-        configuration = Configuration.builder()
-               .options(Option.CREATE_MISSING_PROPERTIES_ON_DEFINITE_PATH).build();
+        configuration = Configuration.builder().options(Option.CREATE_MISSING_PROPERTIES_ON_DEFINITE_PATH).build();
         sourceStream = this.getClass().getClassLoader().getResourceAsStream("transforms/shipment.json");
         sourceStream_1 = this.getClass().getClassLoader().getResourceAsStream("transforms/shipment_1.json");
         sourceJson = configuration.jsonProvider().parse(sourceStream, Charset.defaultCharset().name());
@@ -45,21 +44,21 @@ public class TransformationAdvancedTest {
 
     @Test
     public void simple_transform_spec_test() {
-        Object transformed = configuration.transformationProvider().transform(sourceJson,spec, configuration);
+        Object transformed = configuration.transformationProvider().transform(sourceJson, spec, configuration);
         DocumentContext tgtJsonContext = JsonPath.parse(transformed);
         System.out.println("Document Created by Transformation:" + tgtJsonContext.jsonString());
 
         //Assertions about correctness of transformations
         //$.earliestStartTime +  $.plannedDriveDurationSeconds == $.testingAdditionalTransform.destinationSTAComputed
         long earliestStartTime = jsonContext.read("$.earliestStartTime");
-        int plannedDriveDurationSeconds = jsonContext.read( "$.plannedDriveDurationSeconds");
+        int plannedDriveDurationSeconds = jsonContext.read("$.plannedDriveDurationSeconds");
         long destinationSTAComputed = tgtJsonContext.read("$.testingAdditionalTransform.destinationSTAComputed");
         assertEquals((earliestStartTime + plannedDriveDurationSeconds), destinationSTAComputed);
 
         //! $.isTPLManaged == $.testingAdditionalTransform.isNotTPLManaged
         boolean isTPLManaged = jsonContext.read("$.isTPLManaged");
         boolean isNotTPLManaged = tgtJsonContext.read("$.testingAdditionalTransform.isNotTPLManaged");
-        assertEquals(!isTPLManaged,isNotTPLManaged);
+        assertEquals(!isTPLManaged, isNotTPLManaged);
 
         //$.cost + 100 == $.testingAdditionalTransform.totalCost
         double cost = jsonContext.read("$.cost");
@@ -69,17 +68,18 @@ public class TransformationAdvancedTest {
         //$.weight / 1000 == $.testingAdditionalTransform.weightKGS
         double weight = jsonContext.read("$.weight");
         double weightKGS = tgtJsonContext.read("$.testingAdditionalTransform.weightKGS");
-        assertEquals(weight/1000, weightKGS, 0.01);
+        assertEquals(weight / 1000, weightKGS, 0.01);
 
         //1 - $.weightUtilization == $.testingAdditionalTransform.unUtilizedWeight
         double weightUtilization = jsonContext.read("$.weightUtilization");
         double unUtilizedWeight = tgtJsonContext.read("$.testingAdditionalTransform.unUtilizedWeight");
-        assertEquals(1-weightUtilization, unUtilizedWeight, 0.01);
+        assertEquals(1 - weightUtilization, unUtilizedWeight, 0.01);
     }
 
     @Test
     public void simple_transform_spec_with_missing_source_fields() {
-        Object transformed = configuration.transformationProvider().transform(sourceJson_1,spec, configuration);
+        System.out.println(spec);
+        Object transformed = configuration.transformationProvider().transform(sourceJson_1, spec, configuration);
         DocumentContext tgtJsonContext = JsonPath.parse(transformed);
         System.out.println("Document Created by Transformation:" + tgtJsonContext.jsonString());
     }
@@ -93,7 +93,7 @@ public class TransformationAdvancedTest {
         InputStream specStream = this.getClass().getClassLoader().getResourceAsStream("transforms/multiwildcard_spec.json");
         TransformationSpec tspec = configuration.transformationProvider().spec(specStream, configuration);
 
-        Object transformed = configuration.transformationProvider().transform(json,tspec, configuration);
+        Object transformed = configuration.transformationProvider().transform(json, tspec, configuration);
         DocumentContext tgtJsonContext = JsonPath.parse(transformed);
         System.out.println("Document Created by Transformation:" + tgtJsonContext.jsonString());
         String atl = tgtJsonContext.read("$.reservation.originAirportCode[0]");
@@ -111,7 +111,7 @@ public class TransformationAdvancedTest {
         InputStream specStream = this.getClass().getClassLoader().getResourceAsStream("transforms/wildcard_target_spec.json");
         TransformationSpec tspec = configuration.transformationProvider().spec(specStream, configuration);
 
-        Object transformed = configuration.transformationProvider().transform(json,tspec, configuration);
+        Object transformed = configuration.transformationProvider().transform(json, tspec, configuration);
         DocumentContext tgtJsonContext = JsonPath.parse(transformed);
         String atl = tgtJsonContext.read("$.reservation[0].originAirportCode");
         assertEquals(atl, "ATL");
@@ -127,7 +127,7 @@ public class TransformationAdvancedTest {
     @Test
     public void invalid_multi_wild_card_target() {
         InputStream specStream = this.getClass().getClassLoader().getResourceAsStream("transforms/invalid_wildcard_target_spec.json");
-        assertThrows(TransformationSpecValidationException.class, ()-> configuration.transformationProvider().spec(specStream, configuration));
+        assertThrows(TransformationSpecValidationException.class, () -> configuration.transformationProvider().spec(specStream, configuration));
     }
 
 }

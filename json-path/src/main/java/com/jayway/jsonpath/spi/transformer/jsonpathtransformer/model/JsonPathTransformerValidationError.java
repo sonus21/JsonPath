@@ -21,7 +21,6 @@ public class JsonPathTransformerValidationError extends ValidationError {
     public static final String INVALID_WILDCARD_ARRAY_MAPPING = "INVALID_WILDCARD_ARRAY_MAPPING";
     public static final String MISSING_TABLE_NAME = "MISSING_TABLE_NAME";
     public static final String MISSING_TABLE_DATA = "MISSING_TABLE_DATA";
-    public static final String UNSUPPORTED_OPERATION = "UNSUPPORTED_OPERATION";
     public static final String NO_SOURCE_VALUE_FOR_MAPPING = "NO_SOURCE_VALUE_FOR_MAPPING";
     public static final String MISSING_TARGET_PATH_FOR_MAPPING = "MISSING_TARGET_PATH_FOR_MAPPING";
     public static final String AMBIGUOUS_ADDITIONAL_TRANSFORM = "AMBIGUOUS_ADDITIONAL_TRANSFORM";

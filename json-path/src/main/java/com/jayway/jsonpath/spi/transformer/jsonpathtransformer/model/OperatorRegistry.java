@@ -1,6 +1,10 @@
 package com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model;
 
+import com.jayway.jsonpath.JsonPathException;
+import com.jayway.jsonpath.spi.transformer.TransformationException;
+
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
@@ -49,7 +53,7 @@ public class OperatorRegistry {
                 if (additionalValue instanceof String) {
                     return srcValue + (String) additionalValue;
                 }
-                throw new IllegalArgumentException("source is of type " + srcValue.getClass().getName() + " and " + additionalValue.getClass().getName() + " not supported");
+                return throwError(srcValue, additionalValue, isUnary());
             }
         },
         LHS_STRING_CONCAT(STRING) {
@@ -85,7 +89,7 @@ public class OperatorRegistry {
                         }
                     }
                 }
-                throw new IllegalArgumentException("source is of type " + srcValue.getClass().getName() + " and " + additionalValue.getClass().getName() + " not supported");
+                return throwError(srcValue, additionalValue, isUnary());
             }
         },
         LHS_SUB(NUMERIC) {
@@ -116,7 +120,7 @@ public class OperatorRegistry {
                             return a.doubleValue() - b.doubleValue();
                     }
                 }
-                throw new IllegalArgumentException("source is of type " + srcValue.getClass().getName() + " and " + additionalValue.getClass().getName() + " not supported");
+                return throwError(srcValue, additionalValue, isUnary());
             }
         },
         MUL(NUMERIC) {
@@ -141,7 +145,7 @@ public class OperatorRegistry {
                             return a.doubleValue() * b.doubleValue();
                     }
                 }
-                throw new IllegalArgumentException("source is of type " + srcValue + " and " + additionalValue.getClass().getName() + " not supported");
+                return throwError(srcValue, additionalValue, isUnary());
             }
         },
         LHS_DIV(NUMERIC) {
@@ -172,7 +176,7 @@ public class OperatorRegistry {
                             return a.doubleValue() / b.doubleValue();
                     }
                 }
-                throw new IllegalArgumentException("source is of type " + srcValue + " and " + additionalValue.getClass().getName() + " not supported");
+                return throwError(srcValue, additionalValue, isUnary());
             }
         },
         AND(BOOLEAN) {
@@ -181,7 +185,7 @@ public class OperatorRegistry {
                 if (srcValue instanceof Boolean && additionalValue instanceof Boolean) {
                     return (Boolean) srcValue && (Boolean) additionalValue;
                 }
-                throw new IllegalArgumentException("source is of type " + srcValue + " and " + additionalValue.getClass().getName() + " not supported");
+                return throwError(srcValue, additionalValue, isUnary());
             }
         },
         OR(BOOLEAN) {
@@ -190,7 +194,7 @@ public class OperatorRegistry {
                 if (srcValue instanceof Boolean && additionalValue instanceof Boolean) {
                     return (Boolean) srcValue || (Boolean) additionalValue;
                 }
-                throw new IllegalArgumentException("source is of type " + srcValue + " and " + additionalValue.getClass().getName() + " not supported");
+                return throwError(srcValue, additionalValue, isUnary());
             }
 
         },
@@ -200,7 +204,7 @@ public class OperatorRegistry {
                 if (srcValue instanceof Boolean) {
                     return !(Boolean) srcValue;
                 }
-                throw new IllegalArgumentException("source is of type " + srcValue);
+                return throwError(srcValue, additionalValue, isUnary());
             }
 
             @Override
@@ -214,7 +218,7 @@ public class OperatorRegistry {
                 if (srcValue instanceof Boolean && additionalValue instanceof Boolean) {
                     return (Boolean) srcValue ^ (Boolean) additionalValue;
                 }
-                throw new IllegalArgumentException("source is of type " + srcValue + " and " + additionalValue.getClass().getName() + " not supported");
+                return throwError(srcValue, additionalValue, isUnary());
             }
         },
         TO_EPOCHMILLIS(STRING) {
@@ -245,7 +249,24 @@ public class OperatorRegistry {
             public boolean isUnary() {
                 return true;
             }
-        };
+        },
+
+        TO_SECONDS_FROM_DURATION(STRING) {
+            @Override
+            public Object apply(Object srcValue, Object additionalValue) {
+                String duration = (String) srcValue;
+                Duration d = Duration.parse(duration);
+                return d.toSeconds();
+            }
+
+            @Override
+            public boolean isUnary() {
+                return true;
+            }
+        },
+
+        ;
+
 
         private static final Set<String> allowedOperations;
         private final String type;
@@ -261,28 +282,56 @@ public class OperatorRegistry {
             }
         }
 
-        public static Set<String> getAllowedOperations() {
-            return allowedOperations;
-        }
-
         @Override
         public boolean isUnary() {
             return false;
         }
 
+        @Override
         public String getType() {
             return type;
         }
 
         @Override
-        public Object apply(Object srcValue, Object additionalValue) {
-            throw new UnsupportedOperationException();
+        public boolean supports(Class<?> type) {
+            if(type == null) {
+                return false;
+            }
+            if(type.isAssignableFrom(Number.class) && getType().equals(NUMERIC)) {
+                return true;
+            }
+            if(type.isAssignableFrom(Boolean.class) && getType().equals(BOOLEAN)) {
+                return true;
+            }
+            if(type.isAssignableFrom(String.class) && getType().equals(STRING)) {
+                return true;
+            }
+            return false;
         }
 
         private static String getInferredType(Number a, Number b) {
             String ab = (a.getClass().getName().substring(10, 11).toUpperCase())
                     + (b.getClass().getName().substring(10, 11).toUpperCase());
             return TypeSystem.get(ab);
+        }
+
+        private String getClassName(Object srcValue) {
+            if (srcValue == null) {
+                return "null";
+            }
+            return srcValue.getClass().getSimpleName();
+        }
+
+        protected Object throwError(Object srcValue,
+                                    Object additionalValue,
+                                    boolean isUnary) throws RuntimeException {
+            String message;
+            if (isUnary) {
+                message = String.format("operator: %s has invalid operand type: %s", name(), getClassName(srcValue));
+            } else {
+                message = String.format("operator: %s has invalid operand types a is '%s', b is '%s'", name(), getClassName(srcValue), getClassName(additionalValue));
+            }
+            throw new JsonPathException(message);
         }
     }
 }
