@@ -2,9 +2,7 @@ package com.jayway.jsonpath.spi.transformer.jsonpathtransformer;
 
 import com.jayway.jsonpath.InvalidPathException;
 import com.jayway.jsonpath.JsonPath;
-import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.spi.transformer.TransformationSpec;
-import com.jayway.jsonpath.spi.transformer.TransformationSpecValidationException;
 import com.jayway.jsonpath.spi.transformer.ValidationError;
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.*;
 
@@ -84,7 +82,7 @@ public class JsonPathTransformationSpec implements TransformationSpec {
         List<ValidationError> errors = new ArrayList<ValidationError>();
         errors.addAll(validateDefinitePathsAndArrayWildCardRules());
         errors.addAll(validateLookupTableRules());
-        errors.addAll(validateAddtionalTransforms());
+        errors.addAll(validateAdditionalTransforms());
         return errors;
     }
 
@@ -205,9 +203,8 @@ public class JsonPathTransformationSpec implements TransformationSpec {
 
 
     //TODO: need to restructure it a bit.
-    private Collection<? extends ValidationError> validateAddtionalTransforms() {
+    private Collection<? extends ValidationError> validateAdditionalTransforms() {
         List<ValidationError> response = new ArrayList<ValidationError>();
-
         PathMapping[] mappings = spec.getPathMappings();
         for (PathMapping mapping : mappings) {
 
@@ -234,34 +231,30 @@ public class JsonPathTransformationSpec implements TransformationSpec {
                 }
             }
 
-            SourceTransform.AllowedOperation operatorEnum = null;
+            Operator op = null;
             if (operator != null) {
-                try {
-                    operatorEnum = SourceTransform.AllowedOperation.valueOf(operator);
-                } catch (IllegalArgumentException ex) {
+                op = OperatorRegistry.getOperator(operator);
+                if (op == null) {
                     response.add(new JsonPathTransformerValidationError(
                             INVALID_OPERATOR, operator));
                 }
             }
+
             // if constantValue specified then its a valid wrapper type and a scalar
             if (constantSrcValue != null) {
                 if (!isScalar(constantSrcValue)) {
-                    response.add(new JsonPathTransformerValidationError(
-                            INVALID_CONSTANT_NOT_SCALAR));
+                    response.add(new JsonPathTransformerValidationError(INVALID_CONSTANT_NOT_SCALAR));
                 }
-
             }
-            if (src == null && operator != null) {
-
+            if (src == null && op != null) {
                 //throw invalid operator with null source path
                 response.add(new JsonPathTransformerValidationError(
                         INVALID_OPERATOR_WITH_SRC_NULL, operator));
-
             }
-            if (src != null && operator != null) {
-                if (operatorEnum.getType().startsWith(UNARY)) {
-                    if (additionalSrc != null
-                            || constantSrcValue != null) {
+
+            if (src != null && op != null) {
+                if (op.isUnary()) {
+                    if (additionalSrc != null || constantSrcValue != null) {
                         //Invalid Unary operator for binary operands
                         response.add(new JsonPathTransformerValidationError(
                                 INVALID_UNARY_OPERATOR, src, additionalSrc));
@@ -286,11 +279,11 @@ public class JsonPathTransformationSpec implements TransformationSpec {
                 //Invalid additionalTransform, expected only one of sourcePath or constantSource
                 response.add(new JsonPathTransformerValidationError(
                         INVALID_ADDITIONAL_TRANSFORM,
-                        constantSrcValue,additionalSrc));
-
+                        constantSrcValue, additionalSrc));
             } else if (additionalSrc == null &&
-                    constantSrcValue == null && operator != null &&
-                    !operatorEnum.getType().startsWith(UNARY)) {
+                    constantSrcValue == null &&
+                    op != null &&
+                    op.isBinary()) {
                 //throw invalid additional transform, one of sourcePath or constantSource should be non-null
                 response.add(new JsonPathTransformerValidationError(
                         NULL_ADDITIONAL_TRANSFORM));
@@ -301,13 +294,12 @@ public class JsonPathTransformationSpec implements TransformationSpec {
                 }
             }
         }
-
         return response;
     }
 
 
     private boolean find(String lookupTable, LookupTable[] tables) {
-        if ((tables == null) || tables.length == 0) {
+        if (tables == null) {
             return false;
         }
         for (LookupTable t : tables) {
@@ -358,9 +350,6 @@ public class JsonPathTransformationSpec implements TransformationSpec {
         if (WRAPPER_TYPES.contains(srcValue.getClass())) {
             return true;
         }
-
         return false;
     }
-
-
 }

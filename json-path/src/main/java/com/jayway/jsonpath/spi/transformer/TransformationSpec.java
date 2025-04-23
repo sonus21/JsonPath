@@ -17,7 +17,6 @@ public interface TransformationSpec {
     Object get();
 
     /**
-     *
      * @return a list of Validation Errors in the TransformationSpec
      */
     List<ValidationError> validate();

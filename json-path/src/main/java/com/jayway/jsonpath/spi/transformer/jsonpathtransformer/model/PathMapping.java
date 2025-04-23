@@ -29,7 +29,7 @@ public class PathMapping {
     @Override
     public String toString() {
         return " PathMapping [source = " + source + ", target = " + target +
-                 ", additionalTransform = " + additionalTransform  + "]";
+                ", additionalTransform = " + additionalTransform + "]";
     }
 
     public String getLookupTable() {

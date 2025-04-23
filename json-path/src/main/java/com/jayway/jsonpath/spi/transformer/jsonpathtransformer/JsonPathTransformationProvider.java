@@ -3,19 +3,15 @@ package com.jayway.jsonpath.spi.transformer.jsonpathtransformer;
 import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.spi.transformer.*;
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.LookupTable;
+import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.OperatorRegistry;
+import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.Operator;
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.PathMapping;
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.SourceTransform;
 import com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.TransformationModel;
-import jakarta.json.JsonArray;
-import org.json.JSONArray;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static com.jayway.jsonpath.spi.transformer.jsonpathtransformer.JsonPathTransformationSpec.isArrayWildCard;
 import static com.jayway.jsonpath.spi.transformer.jsonpathtransformer.JsonPathTransformationSpec.isScalar;
@@ -23,47 +19,6 @@ import static com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model.Json
 
 
 public class JsonPathTransformationProvider implements TransformationProvider<JsonPathTransformationSpec> {
-
-
-    private static Map<String, String> inferredTypes = new HashMap<>();
-
-    private static enum InferredTypesCombo {
-        II_I,
-        IS_I,
-        IL_L,
-        LL_L,
-        SS_S,
-        SI_I,
-        LI_L,
-        LS_L,
-        SL_L,
-        IF_F,
-        FI_F,
-        FS_F,
-        FL_F,
-        SF_F,
-        LF_F,
-        FF_F,
-        FD_D,
-        DF_D,
-        ID_D,
-        DI_D,
-        DS_D,
-        DD_D,
-        SD_D,
-        LD_D,
-        DL_D
-    }
-
-    static {
-        for (InferredTypesCombo s : InferredTypesCombo.values()) {
-            String[] str = s.name().split("_");
-            //System.out.println(str[0] + ":" + str[1]);
-            inferredTypes.put(str[0], str[1]);
-
-        }
-
-    }
 
     @Override
     public TransformationSpec spec(String input, Configuration configuration) {
@@ -133,10 +88,10 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
                     getStringFromBundle(NULL_PARAMETER, "source"));
         }
 
-        if (source instanceof  String) {
-            sourceJson = configuration.jsonProvider().parse((String)source);
-        } else if (source instanceof  InputStream) {
-            sourceJson = configuration.jsonProvider().parse((InputStream)source,
+        if (source instanceof String) {
+            sourceJson = configuration.jsonProvider().parse((String) source);
+        } else if (source instanceof InputStream) {
+            sourceJson = configuration.jsonProvider().parse((InputStream) source,
                     Charset.defaultCharset().name());
         }
         if (!configuration.jsonProvider().isArray(sourceJson) &&
@@ -316,18 +271,16 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
 
             }
         }
-        SourceTransform.AllowedOperation operatorEnum = (operator != null) ?
-                SourceTransform.AllowedOperation.valueOf(operator) : null;
 
+        Operator op = OperatorRegistry.getOperator(operator);
+        if (operator != null && op == null) {
+            throw new TransformationException("operator '" + operator + "' is not registered/found");
+        }
 
-        if (additonalSourceValue != null ||
-                (additonalSourceValue == null
-                        && SourceTransform.AllowedOperation.isUnary(operatorEnum))) {
-            checkDataTypesAndOperator(
-                    srcValue, additonalSourceValue, operatorEnum);
-
+        // it's a unary so lets apply on the source
+        if (additonalSourceValue != null || OperatorRegistry.isUnary(op)) {
             if (operator != null) {
-                srcValue = applyAddtionalTransform(srcValue, additonalSourceValue, operatorEnum);
+                srcValue = applyAdditionalTransform(srcValue, additonalSourceValue, op);
             }
         }
 
@@ -337,8 +290,8 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
         //example : $['reservation'][0]['originairportcode']
         //$['reservation'][1]['originairportcode']
         //use srcValue[0] and srcValue[1] to set the value
-        if (configuration.jsonProvider().isArray(srcValue) && isArrayWildCard(pm.getTarget(),false)) {
-            for (int i=0; i < configuration.jsonProvider().length(srcValue); i++) {
+        if (configuration.jsonProvider().isArray(srcValue) && isArrayWildCard(pm.getTarget(), false)) {
+            for (int i = 0; i < configuration.jsonProvider().length(srcValue); i++) {
                 //first expand destination path using i in the wildcard
                 //compile the destination path and use it
                 String target = pm.getTarget();
@@ -358,7 +311,7 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
         } else {
             //srcValue is not jsonarray
             if (first) {
-                if (isArrayWildCard(pm.getTarget(),false)) {
+                if (isArrayWildCard(pm.getTarget(), false)) {
                     //srcValue is not jsonarray but target path is an array
                     String target = pm.getTarget();
                     String updated = replaceWildCardWith(target, 0);
@@ -370,7 +323,7 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
                             srcValue, configuration);
                 }
             } else {
-                if (isArrayWildCard(pm.getTarget(),false)) {
+                if (isArrayWildCard(pm.getTarget(), false)) {
                     //srcValue is not jsonarray but target path is an array
                     String target = pm.getTarget();
                     String updated = replaceWildCardWith(target, 0);
@@ -386,28 +339,26 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
     }
 
     private String replaceWildCardWith(String target, int i) {
-        return target.replace("[*]","[" + i + "]");
+        return target.replace("[*]", "[" + i + "]");
     }
 
     private void checkDataTypesAndOperator(
-            Object srcValue, Object additonalSourceValue,
-            SourceTransform.AllowedOperation operator) {
-
-        if (srcValue != null && additonalSourceValue != null && operator == null) {
+            Object srcValue, Object additionalSourceValue,
+            Operator operator) {
+        if (srcValue != null && additionalSourceValue != null && operator == null) {
             //throw Operator null while source operands non-null
             throw new TransformationException(
                     getStringFromBundle(MISSING_OPERATOR,
-                            srcValue, additonalSourceValue));
-
+                            srcValue, additionalSourceValue));
         }
-        if (operator != null && SourceTransform.AllowedOperation.isUnary(operator)) {
-            if (srcValue != null && additonalSourceValue != null) {
+        if (OperatorRegistry.isUnary(operator)) {
+            if (srcValue != null && additionalSourceValue != null) {
                 //throw invalid Unary Operator NOT with Two Operands
                 throw new TransformationException(
                         getStringFromBundle(INVALID_UNARY_OPERATOR,
-                                srcValue, additonalSourceValue));
+                                srcValue, additionalSourceValue));
             }
-        } else if (operator != null && anyOperandIsNull(srcValue, additonalSourceValue)) {
+        } else if (operator != null && anyOperandIsNull(srcValue, additionalSourceValue)) {
             //throw invalid Binary operator, one of the operands is null
             throw new TransformationException(
                     getStringFromBundle(INVALID_BINARY_OPERATOR, operator));
@@ -417,40 +368,38 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
             return;
         }
         if (srcValue instanceof Number && !(
-                SourceTransform.NUMERIC.equals(operator.getType())
-                        || SourceTransform.UNARY_TIME.equals(operator.getType()))) {
+                OperatorRegistry.NUMERIC.equals(operator.getType())
+                        || operator.isUnary())) {
             //throw expected numeric operator but found
             throw new TransformationException(
                     getStringFromBundle(INVALID_OPERATOR_FOR_TYPE,
                             operator.name(), "numeric", operator.getType()));
         } else if (srcValue instanceof String && !(
-                SourceTransform.STRING.equals(operator.getType())
-                        || SourceTransform.UNARY_TIME.equals(operator.getType()))) {
-
+                OperatorRegistry.STRING.equals(operator.getType())
+                        || operator.isUnary())) {
             //throw expected String operator but found
             throw new TransformationException(
                     getStringFromBundle(INVALID_OPERATOR_FOR_TYPE,
                             operator.name(), "string", operator.getType()));
-        } else if (srcValue instanceof Boolean && !(
-                SourceTransform.BOOLEAN.equals(operator.getType()) ||
-                        SourceTransform.UNARY_BOOLEAN.equals(operator.getType()))) {
+        } else if (srcValue instanceof Boolean &&
+                !(OperatorRegistry.BOOLEAN.equals(operator.getType()) || operator.isUnary())) {
             //throw expected boolean operator but found
             throw new TransformationException(
                     getStringFromBundle(INVALID_OPERATOR_FOR_TYPE,
                             operator.name(), "boolean/unary_boolean", operator.getType()));
         }
 
-        if (additonalSourceValue instanceof Number && !SourceTransform.NUMERIC.equals(operator.getType())) {
+        if (additionalSourceValue instanceof Number && !OperatorRegistry.NUMERIC.equals(operator.getType())) {
             //throw expected numeric operator but found
             throw new TransformationException(
                     getStringFromBundle(INVALID_OPERATOR_FOR_TYPE,
                             operator.name(), "numeric", operator.getType()));
-        } else if (additonalSourceValue instanceof String && !SourceTransform.STRING.equals(operator.getType())) {
+        } else if (additionalSourceValue instanceof String && !OperatorRegistry.STRING.equals(operator.getType())) {
             //throw expected String operator but found
             throw new TransformationException(
                     getStringFromBundle(INVALID_OPERATOR_FOR_TYPE,
                             operator.name(), "string", operator.getType()));
-        } else if (additonalSourceValue instanceof Boolean && !SourceTransform.BOOLEAN.equals(operator.getType())) {
+        } else if (additionalSourceValue instanceof Boolean && !OperatorRegistry.BOOLEAN.equals(operator.getType())) {
             //throw expected boolean operator but found
             throw new TransformationException(
                     getStringFromBundle(INVALID_OPERATOR_FOR_TYPE,
@@ -459,8 +408,8 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
 
     }
 
-    private boolean anyOperandIsNull(Object srcValue, Object additonalSourceValue) {
-        if (srcValue == null || additonalSourceValue == null) {
+    private boolean anyOperandIsNull(Object srcValue, Object additionalSourceValue) {
+        if (srcValue == null || additionalSourceValue == null) {
             return true;
         }
         return false;
@@ -546,150 +495,10 @@ public class JsonPathTransformationProvider implements TransformationProvider<Js
         return builder.toString();
     }
 
-    private BiFunction<Number, Number, Number> add = (a, b) -> addNumbers(a, b, getInferredType(a, b));
-    private BiFunction<Number, Number, Number> sub = (a, b) -> subNumbers(a, b, getInferredType(a, b));
-    private BiFunction<Number, Number, Number> mul = (a, b) -> mulNumbers(a, b, getInferredType(a, b));
-    private BiFunction<Number, Number, Number> div = (a, b) -> divNumbers(a, b, getInferredType(a, b));
-    private BiFunction<String, String, String> concat = (a, b) -> a + b;
-    private BiFunction<Boolean, Boolean, Boolean> and = (a, b) -> a && b;
-    private BiFunction<Boolean, Boolean, Boolean> or = (a, b) -> a || b;
-    private Function<Boolean, Boolean> not = (a) -> !a;
-    private BiFunction<Boolean, Boolean, Boolean> xor = (a, b) -> a ^ b;
-    private Function<String, Long> toEpochMillis = (a) -> iso8601ToEpochMillis(a);
-    private Function<Long, String> toIso8601 = (a) -> epochMillisToIso8601(a);
-
-    private static String getInferredType(Number a, Number b) {
-        String ab = (a.getClass().getName().substring(10, 11).toUpperCase())
-                + (b.getClass().getName().substring(10, 11).toUpperCase());
-        //System.out.println(ab);
-        return inferredTypes.get(ab);
-        //System.out.println(inf);
-        //return inf;
-    }
-
-
-    private static Number addNumbers(Number a, Number b, String inferredType) {
-
-        switch (inferredType) {
-            case "I":
-                return a.intValue() + b.intValue();
-            case "L":
-                return a.longValue() + b.longValue();
-            case "F":
-                return a.floatValue() + b.floatValue();
-            case "D":
-                return a.doubleValue() + b.doubleValue();
-            case "S":
-            default:
-                //same as double
-                return a.doubleValue() + b.doubleValue();
-        }
-    }
-
-    private static Number subNumbers(Number a, Number b, String inferredType) {
-
-        switch (inferredType) {
-            case "I":
-                return a.intValue() - b.intValue();
-            case "L":
-                return a.longValue() - b.longValue();
-            case "F":
-                return a.floatValue() - b.floatValue();
-            case "D":
-                return a.doubleValue() - b.doubleValue();
-            case "S":
-            default:
-                //same as double
-                return a.doubleValue() - b.doubleValue();
-        }
-    }
-
-    private static Number mulNumbers(Number a, Number b, String inferredType) {
-
-        switch (inferredType) {
-            case "I":
-                return a.intValue() * b.intValue();
-            case "L":
-                return a.longValue() * b.longValue();
-            case "F":
-                return a.floatValue() * b.floatValue();
-            case "D":
-                return a.doubleValue() * b.doubleValue();
-            case "S":
-            default:
-                //same as double
-                return a.doubleValue() * b.doubleValue();
-        }
-    }
-
-    private static Number divNumbers(Number a, Number b, String inferredType) {
-
-        switch (inferredType) {
-            case "I":
-                return a.intValue() / b.intValue();
-            case "L":
-                return a.longValue() / b.longValue();
-            case "F":
-                return a.floatValue() / b.floatValue();
-            case "D":
-                return a.doubleValue() / b.doubleValue();
-            case "S":
-            default:
-                //same as double
-                return a.doubleValue() / b.doubleValue();
-        }
-    }
-
-    public static String epochMillisToIso8601(long epochMillis) {
-        String format = "yyyy-MM-dd HH:mm:ss z";
-        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.getDefault());
-        sdf.setTimeZone(TimeZone.getDefault());
-        return sdf.format(new Date(epochMillis));
-    }
-
-    public static long iso8601ToEpochMillis(String time) {
-        //parsing date from ISO 8601
-        Instant strToDate = Instant.parse(time);
-        return strToDate.toEpochMilli();
-    }
-
-
-    private Object applyAddtionalTransform(
-            Object srcValue, Object srcPostProcessingVal, SourceTransform.AllowedOperation op) {
-        switch (op) {
-            case ADD:
-                return add.apply((Number) srcValue, (Number) srcPostProcessingVal);
-            case LHS_SUB:
-                return sub.apply((Number) srcPostProcessingVal, (Number) srcValue);
-            case RHS_SUB:
-                return sub.apply((Number) srcValue, (Number) srcPostProcessingVal);
-            case MUL:
-                return mul.apply((Number) srcValue, (Number) srcPostProcessingVal);
-            case LHS_DIV:
-                return div.apply((Number) srcPostProcessingVal, (Number) srcValue);
-            case RHS_DIV:
-                return div.apply((Number) srcValue, (Number) srcPostProcessingVal);
-            case LHS_STRING_CONCAT:
-                return concat.apply((String) srcPostProcessingVal, (String) srcValue);
-            case RHS_STRING_CONCAT:
-                return concat.apply((String) srcValue, (String) srcPostProcessingVal);
-            case OR:
-                return or.apply((Boolean) srcValue, (Boolean) srcPostProcessingVal);
-            case XOR:
-                return xor.apply((Boolean) srcValue, (Boolean) srcPostProcessingVal);
-            case AND:
-                return and.apply((Boolean) srcValue, (Boolean) srcPostProcessingVal);
-            case NOT:
-                return not.apply((Boolean) srcValue);
-            case TO_ISO8601:
-                return toIso8601.apply((Long) srcValue);
-            case TO_EPOCHMILLIS:
-                return toEpochMillis.apply((String) srcValue);
-
-            default:
-                throw new TransformationException(
-                        getStringFromBundle(UNSUPPORTED_OPERATION, op.name()));
-        }
+    private Object applyAdditionalTransform(
+            Object srcValue, Object srcPostProcessingVal,
+            Operator op) {
+        return op.apply(srcValue, srcPostProcessingVal);
     }
 
 }

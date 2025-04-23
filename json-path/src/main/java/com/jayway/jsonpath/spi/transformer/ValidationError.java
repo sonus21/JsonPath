@@ -10,12 +10,12 @@ public abstract class ValidationError {
 
     public ValidationError(String errorCode, ResourceBundle bundle) {
         this.errorCode = errorCode;
-        this.description = bundle.containsKey(errorCode) ? bundle.getString(errorCode): errorCode;
+        this.description = bundle.containsKey(errorCode) ? bundle.getString(errorCode) : errorCode;
     }
 
-    public ValidationError(String errorCode,  ResourceBundle bundle, Object... params) {
+    public ValidationError(String errorCode, ResourceBundle bundle, Object... params) {
         this.errorCode = errorCode;
-        this.description = MessageFormat.format(bundle.getString(errorCode),  params);
+        this.description = MessageFormat.format(bundle.getString(errorCode), params);
     }
 
     public String getErrorCode() {

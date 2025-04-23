@@ -50,11 +50,11 @@ public class JsonPathTransformerValidationError extends ValidationError {
     }
 
     public JsonPathTransformerValidationError(String errorCode, Object... params) {
-        super(errorCode, mybundle,  params);
+        super(errorCode, mybundle, params);
     }
 
     public static String getStringFromBundle(String errorCode, Object... params) {
-        return MessageFormat.format(mybundle.getString(errorCode),  params);
+        return MessageFormat.format(mybundle.getString(errorCode), params);
     }
 
     public static String getStringFromBundle(String errorCode) {

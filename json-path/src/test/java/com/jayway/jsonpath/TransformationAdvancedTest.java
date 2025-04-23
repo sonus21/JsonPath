@@ -23,8 +23,6 @@ public class TransformationAdvancedTest {
     Object sourceJson;
     Object sourceJson_1;
     DocumentContext jsonContext;
-    DocumentContext jsonContext_1;
-    Map<String, String> kssProps;
 
     @BeforeEach
     public void setup() {

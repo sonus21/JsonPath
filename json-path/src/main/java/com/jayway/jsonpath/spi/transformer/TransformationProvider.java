@@ -8,6 +8,7 @@ public interface TransformationProvider<T extends TransformationSpec> {
 
     /**
      * Create the TransformationSpec from the given Json String
+     *
      * @param input, the source string describing the Transformation
      * @return The Transformation Specification
      * @throws TransformationSpecValidationException
@@ -16,6 +17,7 @@ public interface TransformationProvider<T extends TransformationSpec> {
 
     /**
      * Create the TransformationSpec from the given InputStream
+     *
      * @param input
      * @return The Transformation Specification
      * @throws TransformationSpecValidationException
@@ -23,12 +25,11 @@ public interface TransformationProvider<T extends TransformationSpec> {
     TransformationSpec spec(InputStream input, Configuration configuration);
 
     /**
-     *
-     * @param source the source
-     * @param spec the transformation spec
+     * @param source        the source
+     * @param spec          the transformation spec
      * @param configuration
      * @return return the transformed JSON object. The Object structure is whatever is
      * returned by the underlying JsonProvider.
      */
-     Object transform(Object source, T spec, Configuration configuration);
+    Object transform(Object source, T spec, Configuration configuration);
 }
