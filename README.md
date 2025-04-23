@@ -9,33 +9,6 @@ Jayway JsonPath
 
 Jayway JsonPath is a Java port of [Stefan Goessner JsonPath implementation](http://goessner.net/articles/JsonPath/). 
 
-News
-----
-26 Mar 2023 - Released JsonPath 2.8.0
-
-30 Jan 2022 - Released JsonPath 2.7.0
-
-02 Jun 2021 - Released JsonPath 2.6.0 
-
-10 Dec 2020 - Released JsonPath 2.5.0
-
-05 Jul 2017 - Released JsonPath 2.4.0
-
-26 Jun 2017 - Released JsonPath 2.3.0
-
-29 Feb 2016 - Released JsonPath 2.2.0
-
-22 Nov 2015 - Released JsonPath 2.1.0
-
-19 Mar 2015 - Released JsonPath 2.0.0
-
-11 Nov 2014 - Released JsonPath 1.2.0
-
-01 Oct 2014 - Released JsonPath 1.1.0  
-
-26 Sep 2014 - Released JsonPath 1.0.0 
-
-
 Getting Started
 ---------------
 
@@ -45,7 +18,7 @@ JsonPath is available at the Central Maven Repository. Maven users add this to y
 <dependency>
     <groupId>com.jayway.jsonpath</groupId>
     <artifactId>json-path</artifactId>
-    <version>2.8.0</version>
+    <version>2.9.0</version>
 </dependency>
 ```
 
@@ -85,20 +58,21 @@ Functions
 Functions can be invoked at the tail end of a path - the input to a function is the output of the path expression.
 The function output is dictated by the function itself.
 
-| Function  | Description                                                                          | Output type          |
-|:----------|:-------------------------------------------------------------------------------------|:---------------------|
-| min()     | Provides the min value of an array of numbers                                        | Double               |
-| max()     | Provides the max value of an array of numbers                                        | Double               |
-| avg()     | Provides the average value of an array of numbers                                    | Double               | 
-| stddev()  | Provides the standard deviation value of an array of numbers                         | Double               | 
-| length()  | Provides the length of an array                                                      | Integer              |
-| sum()     | Provides the sum value of an array of numbers                                        | Double               |
-| keys()    | Provides the property keys (An alternative for terminal tilde `~`)                   | `Set<E>`             |
-| concat(X) | Provides a concatinated version of the path output with a new item                   | like input           |
-| append(X) | add an item to the json path output array                                            | like input           |
-| first()   | Provides the first item of an array                                                  | Depends on the array |
-| last()    | Provides the last item of an array                                                   | Depends on the array |
-| index(X)  | Provides the item of an array of index: X, if the X is negative, take from backwards | Depends on the array |
+| Function    | Description                                                                          | Output type          |
+|:------------|:-------------------------------------------------------------------------------------|:---------------------|
+| `min()`     | Provides the min value of an array of numbers                                        | Double               |
+| `max()`     | Provides the max value of an array of numbers                                        | Double               |
+| `avg()`     | Provides the average value of an array of numbers                                    | Double               | 
+| `stddev()`  | Provides the standard deviation value of an array of numbers                         | Double               | 
+| `length()`  | Provides the length of an array                                                      | Integer              |
+| `sum()`     | Provides the sum value of an array of numbers                                        | Double               |
+| `keys()`    | Provides the property keys (An alternative for terminal tilde `~`)                   | `Set<E>`             |
+| `concat(X)` | Provides a concatinated version of the path output with a new item                   | like input           |
+| `append(X)` | add an item to the json path output array                                            | like input           |
+| `first()`   | Provides the first item of an array                                                  | Depends on the array |
+| `last()`    | Provides the last item of an array                                                   | Depends on the array |
+| `index(X)`  | Provides the item of an array of index: X, if the X is negative, take from backwards | Depends on the array |
+
 Filter Operators
 -----------------
 
@@ -106,20 +80,20 @@ Filters are logical expressions used to filter arrays. A typical filter would be
 
 | Operator                 | Description                                                           |
 | :----------------------- | :-------------------------------------------------------------------- |
-| ==                       | left is equal to right (note that 1 is not equal to '1')              |
-| !=                       | left is not equal to right                                            |
-| <                        | left is less than right                                               |
-| <=                       | left is less or equal to right                                        |
-| >                        | left is greater than right                                            |
-| >=                       | left is greater than or equal to right                                |
-| =~                       | left matches regular expression  [?(@.name =~ /foo.*?/i)]             |
-| in                       | left exists in right [?(@.size in ['S', 'M'])]                        |
-| nin                      | left does not exists in right                                         |
-| subsetof                 | left is a subset of right [?(@.sizes subsetof ['S', 'M', 'L'])]       |
-| anyof                    | left has an intersection with right [?(@.sizes anyof ['M', 'L'])]     |
-| noneof                   | left has no intersection with right [?(@.sizes noneof ['M', 'L'])]    |
-| size                     | size of left (array or string) should match right                     |
-| empty                    | left (array or string) should be empty                                |
+| `==`                     | left is equal to right (note that 1 is not equal to '1')              |
+| `!=`                     | left is not equal to right                                            |
+| `<`                      | left is less than right                                               |
+| `<=`                     | left is less or equal to right                                        |
+| `>`                      | left is greater than right                                            |
+| `>=`                     | left is greater than or equal to right                                |
+| `=~`                     | left matches regular expression  [?(@.name =~ /foo.*?/i)]             |
+| `in`                     | left exists in right [?(@.size in ['S', 'M'])]                        |
+| `nin`                    | left does not exists in right                                         |
+| `subsetof`               | left is a subset of right [?(@.sizes subsetof ['S', 'M', 'L'])]       |
+| `anyof`                  | left has an intersection with right [?(@.sizes anyof ['M', 'L'])]     |
+| `noneof`                 | left has no intersection with right [?(@.sizes noneof ['M', 'L'])]    |
+| `size`                   | size of left (array or string) should match right                     |
+| `empty`                  | left (array or string) should be empty                                |
 
 
 Path Examples
@@ -169,23 +143,23 @@ Given the json
 
 | JsonPath                                       | Result |
 |:-------------------------------------------------------------------| :----- |
-| $.store.book[*].author | The authors of all books     |
-| $..author                           | All authors                         |
-| $.store.*                           | All things, both books and bicycles  |
-| $.store..price                 | The price of everything         |
-| $..book[2]                         | The third book                      |
-| $..book[-2]                       | The second to last book            |
-| $..book[0,1]                     | The first two books               |
-| $..book[:2]                       | All books from index 0 (inclusive) until index 2 (exclusive) |
-| $..book[1:2]                     | All books from index 1 (inclusive) until index 2 (exclusive) |
-| $..book[-2:]                     | Last two books                   |
-| $..book[2:]                     | All books from index 2 (inclusive) to last  |
-| $..book[?(@.isbn)]                                                 | All books with an ISBN number         |
-| $.store.book[?(@.price < 10)]                                      | All books in store cheaper than 10  |
-| $..book[?(@.price <= $['expensive'])]                              | All books in store that are not "expensive"  |
-| $..book[?(@.author =~ /.*REES/i)]                                  | All books matching regex (ignore case)  |
-| $..*                                                               | Give me every thing   
-| $..book.length()                                                   | The number of books                      |
+| `$.store.book[*].author` | The authors of all books     |
+| `$..author`                           | All authors                         |
+| `$.store.*`                           | All things, both books and bicycles  |
+| `$.store..price`                 | The price of everything         |
+| `$..book[2]`                         | The third book                      |
+| `$..book[-2]`                       | The second to last book            |
+| `$..book[0,1]`                     | The first two books               |
+| `$..book[:2]`                       | All books from index 0 (inclusive) until index 2 (exclusive) |
+| `$..book[1:2]`                     | All books from index 1 (inclusive) until index 2 (exclusive) |
+| `$..book[-2:]`                     | Last two books                   |
+| `$..book[2:]`                     | All books from index 2 (inclusive) to last  |
+| `$..book[?(@.isbn)]`                                                 | All books with an ISBN number         |
+| `$.store.book[?(@.price < 10)]`                                      | All books in store cheaper than 10  |
+| `$..book[?(@.price <= $['expensive'])]`                              | All books in store that are not "expensive"  |
+| `$..book[?(@.author =~ /.*REES/i)]`                                  | All books matching regex (ignore case)  |
+| `$..*`                                                               | Give me every thing   
+| `$..book.length()`                                                   | The number of books                      |
 
 Reading a Document
 ------------------
@@ -231,10 +205,10 @@ try to cast the result to the type expected by the invoker.
 
 ```java
 //Will throw an java.lang.ClassCastException    
-List<String> list = JsonPath.parse(json).read("$.store.book[0].author")
+List<String> list = JsonPath.parse(json).read("$.store.book[0].author");
 
 //Works fine
-String author = JsonPath.parse(json).read("$.store.book[0].author")
+String author = JsonPath.parse(json).read("$.store.book[0].author");
 ```
 
 When evaluating a path you need to understand the concept of when a path is `definite`. A path is `indefinite` if it contains:

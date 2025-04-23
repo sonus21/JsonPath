@@ -6,41 +6,38 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:5.2.0'
         classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:6.1.0'
     }
 }
 
 ext {
     libs = [
-            jsonSmart: 'net.minidev:json-smart:2.4.10',
-            slf4jApi: 'org.slf4j:slf4j-api:1.7.36',
-            gson: 'com.google.code.gson:gson:2.10.1',
-            hamcrest: 'org.hamcrest:hamcrest:2.2',
-            jacksonDatabind: 'com.fasterxml.jackson.core:jackson-databind:2.14.2',
-            jettison: 'org.codehaus.jettison:jettison:1.5.4',
-            jsonOrg: 'org.json:json:20230227',
-            tapestryJson: 'org.apache.tapestry:tapestry-json:5.8.1',
-            jakartaJsonP: 'jakarta.json:jakarta.json-api:2.0.1',
-            jakartaJsonB: 'jakarta.json.bind:jakarta.json.bind-api:2.0.0',
+            jsonSmart      : 'net.minidev:json-smart:2.5.1',
+            slf4jApi       : 'org.slf4j:slf4j-api:2.0.11',
+            gson           : 'com.google.code.gson:gson:2.10.1',
+            hamcrest       : 'org.hamcrest:hamcrest:2.2',
+            jacksonDatabind: 'com.fasterxml.jackson.core:jackson-databind:2.16.1',
+            jettison       : 'org.codehaus.jettison:jettison:1.5.4',
+            jsonOrg        : 'org.json:json:20231013',
+            tapestryJson   : 'org.apache.tapestry:tapestry-json:5.8.3',
+            jakartaJsonP   : 'jakarta.json:jakarta.json-api:2.0.2',
+            jakartaJsonB   : 'jakarta.json.bind:jakarta.json.bind-api:2.0.0',
 
-            test: [
-                    'commons-io:commons-io:2.11.0',
-                    'junit:junit:4.13.+',
-                    'org.junit.vintage:junit-vintage-engine:5.8.+',
-                    'org.assertj:assertj-core:3.22.0',
+            test           : [
+                    'commons-io:commons-io:2.15.0',
+                    'org.junit.jupiter:junit-jupiter:5.10.1',
+                    'org.assertj:assertj-core:3.25.1',
                     'org.hamcrest:hamcrest:2.2',
                     'org.glassfish:jakarta.json:2.0.1',
                     'org.eclipse:yasson:2.0.4',
-                    //'org.apache.johnzon:johnzon-jsonb:1.2.12',
-                    'org.slf4j:slf4j-simple:1.7.36',
+                    'org.slf4j:slf4j-simple:2.0.9',
                     'com.google.code.gson:gson:2.10.1',
                     'org.hamcrest:hamcrest:2.2',
-                    'com.fasterxml.jackson.core:jackson-databind:2.14.2',
+                    'com.fasterxml.jackson.core:jackson-databind:2.16.1',
                     'org.codehaus.jettison:jettison:1.5.4',
-                    'org.json:json:20140107',
-                    'org.apache.tapestry:tapestry-json:5.8.1',
-                    'jakarta.json:jakarta.json-api:2.0.1',
+                    'org.json:json:20231013',
+                    'org.apache.tapestry:tapestry-json:5.8.3',
+                    'jakarta.json:jakarta.json-api:2.0.2',
                     'jakarta.json.bind:jakarta.json.bind-api:2.0.0'
 
             ]
@@ -53,7 +50,7 @@ allprojects {
     ext.buildTimestamp = new Date().format('yyyy-MM-dd HH:mm:ss')
 
     group = 'com.jayway.jsonpath'
-    version = '2.9.0' + (snapshotVersion ? "-SNAPSHOT" : "")
+    version = '2.10.0' + (snapshotVersion ? "-SNAPSHOT" : "")
 
 }
 
@@ -64,8 +61,10 @@ subprojects {
     apply plugin: 'signing'
     apply plugin: 'biz.aQute.bnd.builder'
 
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    java {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
 
     repositories {
         mavenCentral()
@@ -78,9 +77,6 @@ subprojects {
 
     test {
         useJUnitPlatform()
-
-        systemProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
-
         testLogging {
             events "passed", "skipped", "failed"
         }
@@ -96,7 +92,7 @@ subprojects {
             options.addStringOption('Xdoclint:none', '-quiet')
         }
 
-        if(JavaVersion.current().isJava9Compatible()) {
+        if (JavaVersion.current().isJava9Compatible()) {
             options.addBooleanOption('html5', true)
         }
     }
@@ -117,10 +113,11 @@ subprojects {
             mavenJava(MavenPublication) {
                 from components.java
 
-                artifactId = jar.baseName
+                artifactId = project.name
+                //artifactId = jar.archiveBaseName
 
                 pom {
-                    name = jar.baseName
+                    name = project.name
                     description = 'A library to query and verify JSON'
                     url = 'https://github.com/jayway/JsonPath'
 
@@ -152,9 +149,6 @@ subprojects {
 }
 
 wrapper {
-    gradleVersion = '7.4.2'
+    gradleVersion = '8.5'
 }
-
-//Task used by Heroku for staging
-task stage(dependsOn: [':json-path-web-test:clean', 'json-path-web-test:jar', 'json-path-web-test:shadowJar']) {}
 

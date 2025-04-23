@@ -4,7 +4,7 @@ import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.JsonPathException;
 import com.jayway.jsonpath.Configurations;
 import net.minidev.json.JSONArray;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Verifies methods that are helper implementations of functions for manipulating JSON entities, i.e.
