@@ -1,14 +1,12 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:6.1.0'
-    }
+plugins {
+    id 'java'
+    id 'java-library'
+    id "com.vanniktech.maven.publish" version "0.31.0" apply false
 }
+
+import com.vanniktech.maven.publish.JavaLibrary
+import com.vanniktech.maven.publish.JavadocJar
+
 
 ext {
     libs = [
@@ -50,17 +48,14 @@ allprojects {
     ext.buildTimestamp = new Date().format('yyyy-MM-dd HH:mm:ss')
 
     group = 'com.jayway.jsonpath'
-    version = '2.10.0' + (snapshotVersion ? "-SNAPSHOT" : "")
+    version = '2.10.1' + (snapshotVersion ? "-SNAPSHOT" : "")
 
 }
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'com.vanniktech.maven.publish'
     apply plugin: 'java-library'
-    apply plugin: 'maven-publish'
-    apply plugin: 'signing'
-    apply plugin: 'biz.aQute.bnd.builder'
-
     java {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -70,21 +65,11 @@ subprojects {
         mavenCentral()
     }
 
-    java {
-        withJavadocJar()
-        withSourcesJar()
-    }
-
     test {
         useJUnitPlatform()
         testLogging {
             events "passed", "skipped", "failed"
         }
-    }
-
-    signing {
-        sign publishing.publications
-        required { !snapshotVersion && gradle.taskGraph.hasTask("publish") }
     }
 
     javadoc {
@@ -97,57 +82,42 @@ subprojects {
         }
     }
 
-    publishing {
-        repositories {
-            maven {
-                def releaseRepo = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-                def snapshotRepo = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-                url = snapshotVersion ? snapshotRepo : releaseRepo
-                credentials {
-                    username = project.hasProperty('sonatypeUsername') ? sonatypeUsername : "Unknown user"
-                    password = project.hasProperty('sonatypePassword') ? sonatypePassword : "Unknown password"
+    mavenPublishing {
+        group = 'io.github.sonus21'
+        publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
+        signAllPublications()
+        configure(new JavaLibrary(new JavadocJar.Javadoc(), true))
+
+        pom {
+            name = project.name
+            description = 'A library to query, verify and transform JSON'
+            url = 'https://github.com/sonus21/JsonPath'
+
+            licenses {
+                license {
+                    name = "The Apache Software License, Version 2.0"
+                    url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                    distribution = "repo"
                 }
             }
-        }
-        publications {
-            mavenJava(MavenPublication) {
-                from components.java
 
-                artifactId = project.name
-                group = 'com.github.sonus21'
-                //artifactId = jar.archiveBaseName
+            scm {
+                url = 'scm:git:git://github.com/jayway/JsonPath.git'
+                connection = 'scm:git:git://github.com/jayway/JsonPath.git'
+                developerConnection = 'scm:git:git://github.com/jayway/JsonPath.git'
+            }
 
-                pom {
-                    name = project.name
-                    description = 'A library to query, verify and transform JSON'
-                    url = 'https://github.com/sonus21/JsonPath'
-
-                    licenses {
-                        license {
-                            name = "The Apache Software License, Version 2.0"
-                            url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-                            distribution = "repo"
-                        }
-                    }
-
-                    scm {
-                        url = 'scm:git:git://github.com/jayway/JsonPath.git'
-                        connection = 'scm:git:git://github.com/jayway/JsonPath.git'
-                        developerConnection = 'scm:git:git://github.com/jayway/JsonPath.git'
-                    }
-
-                    developers {
-                        developer {
-                            id = 'kalle.stenflo'
-                            name = 'Kalle Stenflo'
-                            email = 'kalle.stenflo (a) gmail.com'
-                        }
-                    }
+            developers {
+                developer {
+                    id = 'kalle.stenflo'
+                    name = 'Kalle Stenflo'
+                    email = 'kalle.stenflo (a) gmail.com'
                 }
             }
         }
     }
 }
+
 
 wrapper {
     gradleVersion = '8.5'

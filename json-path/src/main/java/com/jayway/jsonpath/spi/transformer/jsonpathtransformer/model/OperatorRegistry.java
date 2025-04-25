@@ -1,7 +1,6 @@
 package com.jayway.jsonpath.spi.transformer.jsonpathtransformer.model;
 
 import com.jayway.jsonpath.JsonPathException;
-import com.jayway.jsonpath.spi.transformer.TransformationException;
 
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -256,7 +255,7 @@ public class OperatorRegistry {
             public Object apply(Object srcValue, Object additionalValue) {
                 String duration = (String) srcValue;
                 Duration d = Duration.parse(duration);
-                return d.toSeconds();
+                return d.getSeconds();
             }
 
             @Override
